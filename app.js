@@ -1,33 +1,40 @@
 const express = require("express")
 const app = express()
 const cors = require("cors")
-//load env file.. using process
 require("dotenv").config()
 app.use(express.json())
-app.use(cors()) //allow all requests
+app.use(cors())
 
 const DBConnection = require("./src/utils/DBConnection")
 DBConnection()
 
-require("./src/models/UserModel")
-require("./src/models/ProjectModel")
-require("./src/models/ModuleModel")
-require("./src/models/TaskModel")
-
 const userRoutes = require("./src/routes/UserRoutes")
-app.use("/user",userRoutes)
+app.use("/users", userRoutes)
 
 const projectRoutes = require("./src/routes/ProjectRoutes")
-app.use("/project",projectRoutes)
+app.use("/projects", projectRoutes)
 
 const moduleRoutes = require("./src/routes/ModuleRoutes")
-app.use("/module",moduleRoutes)
+app.use("/projects/:projectId/modules", moduleRoutes)
+app.use("/modules", moduleRoutes)
 
 const taskRoutes = require("./src/routes/TaskRoutes")
-app.use("/task",taskRoutes)
+app.use("/tasks", taskRoutes)
 
-const PORT = process.env.PORT
-app.listen(PORT,()=>{
-    console.log(`server started on port ${PORT}`)
+const bugRoutes = require("./src/routes/BugCommentRoutes")
+app.use("/bugs", bugRoutes)
+
+const notificationRoutes = require("./src/routes/NotificationRoutes")
+app.use("/notifications", notificationRoutes)
+
+const auditRoutes = require("./src/routes/AuditLogRoutes")
+app.use("/audit", auditRoutes)
+
+const dashboardRoutes = require("./src/routes/DashboardRoutes")
+app.use("/dashboard", dashboardRoutes)
+
+const PORT = process.env.PORT || 3000
+
+app.listen(PORT, () => {
+  console.log(`Server started on port ${PORT}`)
 })
-//server creation

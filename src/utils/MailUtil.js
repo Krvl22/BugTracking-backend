@@ -35,3 +35,4 @@ const getWelcomeEmailHtml = (role = "Developer") => {
 };
 
 module.exports = { mailSend, getWelcomeEmailHtml };
+

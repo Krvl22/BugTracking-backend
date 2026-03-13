@@ -1,34 +1,37 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose")
 const Schema = mongoose.Schema
-const bugCommentSchema = new Schema({
-    
+
+const bugCommentSchema = new Schema(
+  {
     task: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'tasks',
+      ref: "tasks",           
       required: true,
     },
     commentedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'users',
+      ref: "users",           
       required: true,
     },
     comment: {
       type: String,
-      required: [true, 'Bug comment cannot be empty'],
-      trim: true,
+      required: true,
+      minlength: 10,          
+      maxlength: 2000,       
     },
     bugSeverity: {
       type: String,
-      enum: ['low', 'medium', 'high', 'critical'],
-      default: 'medium',
+      default: "medium",
+      enum: ["low", "medium", "high", "critical"], 
     },
     submissionCycle: {
       type: Number,
-      default: 1, 
+      default: 1,
     },
     attachmentUrl: {
       type: String,
       default: null,
+      maxlength: 500,
     },
     resolved: {
       type: Boolean,
@@ -40,6 +43,7 @@ const bugCommentSchema = new Schema({
     },
   },
   { timestamps: true }
-);
+)
 
-module.exports = mongoose.model('bugcomments', bugCommentSchema);
+
+module.exports = mongoose.model("bugcomments", bugCommentSchema)

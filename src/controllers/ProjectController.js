@@ -1,117 +1,209 @@
 const ProjectModel = require("../models/ProjectModel")
 
-const createProject = async(req,res)=>{
+// CREATE PROJECT
+const createProject = async (req,res)=>{
+  try{
 
-    try{
-        const project = await ProjectModel.create({
-            name:req.body.name,
-            description:req.body.description,
-            createdBy:req.body.createdBy
-        })
-        res.status(201).json({
-            message:"Project created Successfully",
-            data:project       
-        })
+    const { name, description, projectKey, createdBy } = req.body
 
-    } 
-    catch(err){
-        res.status(500).json({
-            message:"Error while creating Project",
-            err:err.message
-        })
+    if(!name || !projectKey || !createdBy){
+      return res.status(400).json({
+        success:false,
+        message:"name, projectKey and createdBy are required"
+      })
     }
+
+    const existingProject = await ProjectModel.findOne({
+      $or:[
+        { name:name },
+        { projectKey:projectKey }
+      ]
+    })
+
+    if(existingProject){
+      return res.status(400).json({
+        success:false,
+        message:"Project with this name or key already exists"
+      })
+    }
+
+    const project = await ProjectModel.create({
+      name,
+      description,
+      projectKey,
+      createdBy
+    })
+
+    res.status(201).json({
+      success:true,
+      message:"Project created successfully",
+      data:project
+    })
+
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Error while creating project",
+      error:err.message
+    })
+  }
 }
 
-const getAllProjects =async(req,res)=>{
 
-    try{
-        const getProjects = await ProjectModel.find()
-        .populate("createdBy","firstName lastName email")
-        .sort({createdAt:-1})
+// GET ALL PROJECTS
+const getAllProjects = async (req,res)=>{
+  try{
 
-        res.status(200).json({
-            message:"Projects Fetched Succssfully",
-            data:getProjects
-        })
-    }
-    catch(err){
-        res.status(500).json({
-            message:"Error fetching Projects",
-            err:err.message
-        })
-    }
+    const projects = await ProjectModel.find()
+      .populate("createdBy","firstName lastName email")
+      .sort({ createdAt:-1 })
+
+    res.status(200).json({
+      success:true,
+      message:"Projects fetched successfully",
+      data:projects
+    })
+
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Error fetching projects",
+      error:err.message
+    })
+  }
 }
 
 
-const getProject = async(req,res)=>{
-    try{
-        const getProjectByID = await ProjectModel.findById(req.params.id)
-        .populate("createdBy","firstName lastName email")
+// GET SINGLE PROJECT
+const getProject = async (req,res)=>{
+  try{
 
-        if(!getProjectByID)
-        {
-            return res.status(404).json({ message: "Project not found" })
-        }
+    const project = await ProjectModel.findById(req.params.id)
+      .populate("createdBy","firstName lastName email")
 
-        res.status(200).json({
-            message:"Project Fetched Successfully",
-            data:getProjectByID
-        })
+    if(!project){
+      return res.status(404).json({
+        success:false,
+        message:"Project not found"
+      })
     }
-    catch(err){
-        res.status(500).json({
-            message:"Error Fetching Project",
-            err:err.message
-        })
-    }
+
+    res.status(200).json({
+      success:true,
+      message:"Project fetched successfully",
+      data:project
+    })
+
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Error fetching project",
+      error:err.message
+    })
+  }
 }
 
-const updateProject = async(req,res)=>{
 
-    try{
-        const projectUpdate = await ProjectModel.findByIdAndUpdate(req.params.id,req.body,{new:true})
-           
-        if(!projectUpdate) {
-            return res.status(404).json({ message: "Project not found" })
-        } 
-        res.status(201).json({
-            message:"Project Updated Successfully",
-            data : projectUpdate
-        })
+// UPDATE PROJECT
+const updateProject = async (req,res)=>{
+  try{
+
+    const project = await ProjectModel.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new:true, runValidators:true }
+    )
+
+    if(!project){
+      return res.status(404).json({
+        success:false,
+        message:"Project not found"
+      })
     }
-    catch(err){
-        res.status(500).json({
-            message:"Error Updating Project",
-            err:err.message
-        })
-    }
+
+    res.status(200).json({
+      success:true,
+      message:"Project updated successfully",
+      data:project
+    })
+
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Error updating project",
+      error:err.message
+    })
+  }
 }
 
-const deleteProject = async(req,res)=>{
 
-    try{
-        const projectDelete = await ProjectModel.findByIdAndDelete(req.params.id)
+// DELETE PROJECT
+const deleteProject = async (req,res)=>{
+  try{
 
-        if(!projectDelete){
-            return res.status(404).json({message:"Project not  found"})
-        }
-        res.status(200).json({
-            message:"Project Deleted Succssfully",
-            data:projectDelete
-        })
+    const project = await ProjectModel.findByIdAndDelete(req.params.id)
+
+    if(!project){
+      return res.status(404).json({
+        success:false,
+        message:"Project not found"
+      })
     }
-    catch(err){
-        res.status(500).json({
-            message:"Error while Deleting Project",
-            err:err.message
-        })
-    }
+
+    res.status(200).json({
+      success:true,
+      message:"Project deleted successfully",
+      data:project
+    })
+
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Error deleting project",
+      error:err.message
+    })
+  }
 }
+
+
+// CHANGE PROJECT STATUS
+const changeProjectStatus = async (req,res)=>{
+  try{
+
+    const project = await ProjectModel.findByIdAndUpdate(
+      req.params.id,
+      { status:req.body.status },
+      { new:true }
+    )
+
+    if(!project){
+      return res.status(404).json({
+        success:false,
+        message:"Project not found"
+      })
+    }
+
+    res.status(200).json({
+      success:true,
+      message:"Project status updated",
+      data:project
+    })
+
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Error updating project status",
+      error:err.message
+    })
+  }
+}
+
 
 module.exports={
-    createProject,
-    getAllProjects,
-    getProject,
-    updateProject,
-    deleteProject
+  createProject,
+  getAllProjects,
+  getProject,
+  updateProject,
+  deleteProject,
+  changeProjectStatus
 }

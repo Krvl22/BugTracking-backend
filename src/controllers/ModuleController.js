@@ -1,154 +1,160 @@
-const ProjectModel = require("../models/ProjectModel")  
-const moduleSchema = require("../models/ModuleModel")
+const ModuleModel = require("../models/ModuleModel")
 
+// CREATE MODULE
 const createModule = async(req,res)=>{
-    
-    try{
-        const module = await moduleSchema.create({
-            name:req.body.name,
-            description:req.body.description,
-            project:req.body.project,
-            createdBy:req.body.createdBy
-        })
-        const populated = await module.populate([
-            {path:"project", select:"name"},
-            {path:"createdBy" , select:"firstName lastName"}
-        ])
+  try{
 
-        res.status(201).json({
-            message:"Module Created Succssfully",
-            data :populated 
-        })
+    const module = await ModuleModel.create({
+      name:req.body.name,
+      description:req.body.description,
+      project:req.body.project,
+      createdBy:req.body.createdBy
+    })
 
-    }
-    catch(err){
-        res.status(500).json({
-            message:"Module cannot be created",
-            err:err.message
-        })
-    }
+    res.status(201).json({
+      success:true,
+      message:"Module created successfully",
+      data:module
+    })
+
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Error creating module",
+      error:err.message
+    })
+  }
 }
 
+
+// GET ALL MODULES BY PROJECT
 const getAllModules = async(req,res)=>{
-    
-    try{
-        const search = req.query.search || ""
-        const page = parseInt(req.query.page) || 1
-        const limit = parseInt(req.query.limit) || 10
-        const skip = (page - 1) * limit
+  try{
 
-        const filter = {
-            project:req.params.projectId,
-            name:{$regex:search ,$options:"i"}
-        }
-        const total = await moduleSchema.countDocuments(filter)
-        const modules = await moduleSchema.find(filter)
-            .populate("createdBy" , "firstName lastName email")
-            .populate("project" , "name description")
-            .sort({createdAt:-1})
-            .skip(skip)
-            .limit(limit)
+    const modules = await ModuleModel.find({
+      project:req.query.projectId,
+      isActive:true
+    })
+    .populate("project","name")
+    .populate("createdBy","firstName lastName")
 
-        res.status(200).json({
-            message:"All Feteched Modules",
-            pagination:{
-                total,
-                page, 
-                limit,
-                totalPages:Math.ceil(total / limit)
-            },
-            data:modules
-        })
-        
-    } 
-    catch(err){
-        res.status(500).json({
-            message:"modules cannot be fetched",
-            err:err.message
-        })
-    }
+    res.status(200).json({
+      success:true,
+      message:"Modules fetched successfully",
+      data:modules
+    })
+
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Error fetching modules",
+      error:err.message
+    })
+  }
 }
 
+
+// GET SINGLE MODULE
 const getModule = async(req,res)=>{
-    
-    try{
-        const getModuleByID = await moduleSchema.findById(req.params.id)
-        .populate("createdBy","firstName lastName")
-        .populate({
-            path:"project",
-            select:"name status",
-            populate:{
-                path:"createdBy",
-                select:"firstName lastName"
-            }
-        })
-        if(!getModuleByID){
-            return res.status(404).json({message:"Module not found"})
-        }
-        res.status(200).json({
-            message:"Module Fetched  Succssfully",
-            data:getModuleByID
-        })        
-    } 
-    catch(err){
-        res.status(500).json({
-            message:"Error Fetching Module",
-            err:err.message
-        })
+  try{
+
+    const module = await ModuleModel.findById(req.params.id)
+      .populate("project","name")
+      .populate("createdBy","firstName lastName")
+
+    if(!module){
+      return res.status(404).json({
+        success:false,
+        message:"Module not found"
+      })
     }
+
+    res.status(200).json({
+      success:true,
+      message:"Module fetched successfully",
+      data:module
+    })
+
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Error fetching module",
+      error:err.message
+    })
+  }
 }
 
+
+// UPDATE MODULE
 const updateModule = async(req,res)=>{
-    try{
-        const moduleUpdate = await moduleSchema.findByIdAndUpdate(req.params.id,req.body,{new:true})
-        .populate("project","name")
-        .populate("createdBy","firstName lastName")
-        
-        if(!moduleUpdate){
-            return res.status(404).json({message:"Module not found"})
-        }
-        
-        res.status(201).json({
-            message:"Module Updated Successfully",
-            data:moduleUpdate
-        })
-    } 
-    catch(err){
-        res.status(500).json({
-            message:"Error Updating Module",
-            err:err.message
-        })
+  try{
+
+    const module = await ModuleModel.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new:true }
+    )
+
+    if(!module){
+      return res.status(404).json({
+        success:false,
+        message:"Module not found"
+      })
     }
+
+    res.status(200).json({
+      success:true,
+      message:"Module updated successfully",
+      data:module
+    })
+
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Error updating module",
+      error:err.message
+    })
+  }
 }
 
+
+// DELETE MODULE
 const deleteModule = async(req,res)=>{
-    try{
-        const moduleDelete = await moduleSchema.findByIdAndDelete(req.params.id)
-        
-        if(!moduleDelete){
-            return res.status(404).json({message:"Module not Found"})
-        }
-        
-        res.status(200).json({
-            message:"Module Deleted",
-            data:moduleDelete
-        })
-    } 
-    catch(err){
-        res.status(500).json({
-            message:"Error Deleting Module",
-            err:err.message
-        })
+  try{
+
+    const module = await ModuleModel.findByIdAndUpdate(
+      req.params.id,
+      { isActive:false, status:"inactive" },
+      { new:true }
+    )
+
+    if(!module){
+      return res.status(404).json({
+        success:false,
+        message:"Module not found"
+      })
     }
+
+    res.status(200).json({
+      success:true,
+      message:"Module deleted successfully",
+      data:module
+    })
+
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Error deleting module",
+      error:err.message
+    })
+  }
 }
+
 
 module.exports={
-    createModule,
-    getAllModules,
-    getModule,
-    updateModule,
-    deleteModule
+  createModule,
+  getAllModules,
+  getModule,
+  updateModule,
+  deleteModule
 }
-
-
-    
