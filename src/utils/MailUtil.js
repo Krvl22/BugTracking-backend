@@ -4,6 +4,7 @@ const path = require("path");
 require("dotenv").config();
 
 const mailSend = async (to, subject, html) => {
+  try{
   const transporter = mailer.createTransport({
     service: "gmail",
     auth: {
@@ -22,8 +23,13 @@ const mailSend = async (to, subject, html) => {
   const mailResponse = await transporter.sendMail(mailOptions);
   console.log(mailResponse);
   return mailResponse;
-};
+  }
+  catch(err){
+    console.error("Mail Error:", err.message);
+    throw err;
+  }
 
+}
 const getWelcomeEmailHtml = (role = "Developer") => {
   const templatePath = path.join(__dirname, "welcome-email.html");
   let html = fs.readFileSync(templatePath, "utf8");
@@ -35,4 +41,3 @@ const getWelcomeEmailHtml = (role = "Developer") => {
 };
 
 module.exports = { mailSend, getWelcomeEmailHtml };
-

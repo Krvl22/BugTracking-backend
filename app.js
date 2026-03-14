@@ -1,40 +1,40 @@
-const express = require("express")
-const app = express()
-const cors = require("cors")
-require("dotenv").config()
-app.use(express.json())
-app.use(cors())
+  const express = require("express")
+  const app = express()
+  const cors = require("cors")
+  require("dotenv").config()
+  app.use(express.json())
+  app.use(cors())
 
-const DBConnection = require("./src/utils/DBConnection")
-DBConnection()
+  const DBConnection = require("./src/utils/DBConnection")
+  DBConnection()
 
-const userRoutes = require("./src/routes/UserRoutes")
-app.use("/users", userRoutes)
+  const userRoutes = require("./src/routes/UserRoutes")
+  app.use("/users", userRoutes)
 
-const projectRoutes = require("./src/routes/ProjectRoutes")
-app.use("/projects", projectRoutes)
+  const projectRoutes = require("./src/routes/ProjectRoutes")
+  app.use("/projects", projectRoutes)
 
-const moduleRoutes = require("./src/routes/ModuleRoutes")
-app.use("/projects/:projectId/modules", moduleRoutes)
-app.use("/modules", moduleRoutes)
+  const moduleRoutes = require("./src/routes/ModuleRoutes")
+  app.use("/projects/:projectId/modules", moduleRoutes)
+  app.use("/modules", moduleRoutes)
 
-const taskRoutes = require("./src/routes/TaskRoutes")
-app.use("/tasks", taskRoutes)
+  const taskRoutes = require("./src/routes/TaskRoutes")
+  app.use("/tasks", taskRoutes)
 
-const bugRoutes = require("./src/routes/BugCommentRoutes")
-app.use("/bugs", bugRoutes)
+  const bugRoutes = require("./src/routes/BugCommentRoutes")
+  app.use("/bugs", bugRoutes)
 
-const notificationRoutes = require("./src/routes/NotificationRoutes")
-app.use("/notifications", notificationRoutes)
+  const notificationRoutes = require("./src/routes/NotificationRoutes")
+  app.use("/notifications", notificationRoutes)
 
-const auditRoutes = require("./src/routes/AuditLogRoutes")
-app.use("/audit", auditRoutes)
+  const auditRoutes = require("./src/routes/AuditLogRoutes")
+  app.use("/audit", auditRoutes)
 
-const dashboardRoutes = require("./src/routes/DashboardRoutes")
-app.use("/dashboard", dashboardRoutes)
+  const dashboardRoutes = require("./src/routes/DashboardRoutes")
+  app.use("/dashboard", dashboardRoutes)
 
-const PORT = process.env.PORT || 3000
+  const PORT = process.env.PORT || 3000
 
-app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`)
-})
+  app.listen(PORT, () => {
+    console.log(`Server started on port ${PORT}`)
+  })  
