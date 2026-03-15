@@ -35,32 +35,30 @@ const getAllModules = async(req,res)=>{
       project:req.query.projectId,
       isActive:true
     })
-    .populate("project","name")
+    .populate("project","name projectKey")
     .populate("createdBy","firstName lastName")
 
     res.status(200).json({
       success:true,
-      message:"Modules fetched successfully",
       data:modules
     })
 
   }catch(err){
     res.status(500).json({
       success:false,
-      message:"Error fetching modules",
       error:err.message
     })
   }
 }
 
-
 // GET SINGLE MODULE
+
 const getModule = async(req,res)=>{
   try{
 
     const module = await ModuleModel.findById(req.params.id)
-      .populate("project","name")
-      .populate("createdBy","firstName lastName")
+      .populate("project","name projectKey")
+      .populate("createdBy","firstName lastName email")
 
     if(!module){
       return res.status(404).json({
@@ -83,7 +81,6 @@ const getModule = async(req,res)=>{
     })
   }
 }
-
 
 // UPDATE MODULE
 const updateModule = async(req,res)=>{
@@ -158,3 +155,4 @@ module.exports={
   updateModule,
   deleteModule
 }
+

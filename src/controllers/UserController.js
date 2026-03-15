@@ -59,84 +59,76 @@ const registerUser = async (req, res) => {
    LOGIN USER
 ================================ */
 
-const loginUser = async (req, res) => {
-  try {
+const loginUser = async (req,res)=>{
+  try{
 
-    const user = await UserModel.findOne({ email: req.body.email }).select("+password")
+    const user = await UserModel.findOne({ email:req.body.email })
+      .select("+password")
+      .populate("role","name")
 
-    if (!user) {
+    if(!user){
       return res.status(404).json({
-        success: false,
-        message: "User not found"
+        success:false,
+        message:"User not found"
       })
     }
 
-    if (!user.isActive) {
-      return res.status(403).json({
-        success: false,
-        message: "Account deactivated. Contact admin."
-      })
-    }
+    const match = await bcrypt.compare(req.body.password,user.password)
 
-    const isMatch = await bcrypt.compare(req.body.password, user.password)
-
-    if (!isMatch) {
+    if(!match){
       return res.status(401).json({
-        success: false,
-        message: "Invalid password"
+        success:false,
+        message:"Invalid password"
       })
     }
-
-    await UserModel.findByIdAndUpdate(user._id, {
-      lastLogin: new Date()
-    })
 
     const userObject = user.toObject()
     delete userObject.password
 
     res.status(200).json({
-      success: true,
-      message: "Login successful",
-      data: userObject
+      success:true,
+      message:"Login successful",
+      data:userObject
     })
 
-  } catch (err) {
-
+  }catch(err){
     res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: err.message
+      success:false,
+      message:"Internal server error",
+      error:err.message
     })
-
   }
 }
 
 /* ===============================
    GET ALL USERS
 ================================ */
+const getAllUsers = async (req,res)=>{
+  try{
 
-const getAllUsers = async (req, res) => {
-  try {
-
-    const users = await UserModel.find({ isActive: true })
+    const users = await UserModel.find({ isActive:true })
+      .populate("role","name")
+      .populate("projects","name projectKey")
+      .select("-password")
+      .sort({ createdAt:-1 })
 
     res.status(200).json({
-      success: true,
-      message: "Users fetched successfully",
-      data: users
+      success:true,
+      message:"Users fetched successfully",
+      data:users
     })
 
-  } catch (err) {
-
+  }catch(err){
     res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: err.message
+      success:false,
+      message:"Internal server error",
+      error:err.message
     })
-
   }
 }
 
+
+/* 
 /* ===============================
    UPDATE USER
 ================================ */
@@ -386,3 +378,4 @@ module.exports = {
   forgotpassword,
   resetPassword
 }
+

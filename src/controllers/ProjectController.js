@@ -56,6 +56,7 @@ const getAllProjects = async (req,res)=>{
 
     const projects = await ProjectModel.find()
       .populate("createdBy","firstName lastName email")
+      .populate("teamMembers","firstName lastName role")
       .sort({ createdAt:-1 })
 
     res.status(200).json({
@@ -73,13 +74,14 @@ const getAllProjects = async (req,res)=>{
   }
 }
 
-
 // GET SINGLE PROJECT
 const getProject = async (req,res)=>{
   try{
 
     const project = await ProjectModel.findById(req.params.id)
       .populate("createdBy","firstName lastName email")
+      .populate("teamMembers","firstName lastName role")
+      .populate("modules","name")
 
     if(!project){
       return res.status(404).json({
@@ -90,19 +92,16 @@ const getProject = async (req,res)=>{
 
     res.status(200).json({
       success:true,
-      message:"Project fetched successfully",
       data:project
     })
 
   }catch(err){
     res.status(500).json({
       success:false,
-      message:"Error fetching project",
       error:err.message
     })
   }
 }
-
 
 // UPDATE PROJECT
 const updateProject = async (req,res)=>{
@@ -207,3 +206,5 @@ module.exports={
   deleteProject,
   changeProjectStatus
 }
+
+

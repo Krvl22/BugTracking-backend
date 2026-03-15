@@ -58,18 +58,16 @@ const addBugComment = async (req,res)=>{
 }
 
 
-
-// GET BUG COMMENTS FOR A TASK
 const getBugComments = async (req,res)=>{
   try{
 
     const bugs = await BugComment.find({ task:req.params.taskId })
+      .populate("task","issueKey title")
       .populate("commentedBy","firstName lastName email role")
       .sort({ createdAt:-1 })
 
     res.status(200).json({
       success:true,
-      message:"Bug comments fetched successfully",
       count:bugs.length,
       data:bugs
     })
@@ -77,7 +75,6 @@ const getBugComments = async (req,res)=>{
   }catch(err){
     res.status(500).json({
       success:false,
-      message:"Error fetching bug comments",
       error:err.message
     })
   }
@@ -127,3 +124,4 @@ module.exports = {
   getBugComments,
   resolveBug
 }
+
