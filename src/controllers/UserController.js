@@ -2,6 +2,7 @@ const UserModel = require("../models/UserModel")
 const bcrypt = require("bcrypt")
 const { mailSend } = require("../utils/MailUtil")
 const {welcomeEmailTemplate, resetPasswordTemplate} = require("../utils/EmailTemplates")
+const uploadToCloudinary = require("../utils/CloudinaryUtil")
 const crypto = require("crypto")
 
 /* ===============================

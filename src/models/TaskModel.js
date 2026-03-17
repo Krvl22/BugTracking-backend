@@ -72,6 +72,22 @@ const taskSchema = new Schema({
     default:null
   },
 
+  attachmentUrl: {
+    type: String,
+    default: null,
+  },
+
+  // attachments: [
+  //   {
+  //     fileName: String,
+  //     filePath: String,
+  //     uploadedAt: {
+  //       type: Date,
+  //       default: Date.now
+  //     }
+  //   }
+  // ],
+
   status:{
     type:String,
     default:"to_do",

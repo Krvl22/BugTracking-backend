@@ -1,11 +1,12 @@
 const BugComment = require("../models/BugCommentModel")
 const Task = require("../models/TaskModel")
+const uploadToCloudinary = require("../utils/CloudinaryUtil")
 
 // ADD BUG COMMENT
 const addBugComment = async (req,res)=>{
   try{
 
-    const { taskId , comment , bugSeverity , attachmentUrl } = req.body
+    const { taskId , comment , bugSeverity } = req.body
 
     if(!taskId){
       return res.status(400).json({
@@ -30,6 +31,13 @@ const addBugComment = async (req,res)=>{
       })
     }
 
+    let attachmentUrl = null
+
+    if(req.file){
+      const cloudinaryResponse = await uploadToCloudinary(req.file.path)
+      attachmentUrl = cloudinaryResponse.secure_url
+    }
+
     const bug = await BugComment.create({
       task:taskId,
       commentedBy:req.user._id,
@@ -38,7 +46,6 @@ const addBugComment = async (req,res)=>{
       attachmentUrl
     })
 
-    // change task status when bug reported
     task.status = "bug_found"
     await task.save()
 
@@ -57,6 +64,9 @@ const addBugComment = async (req,res)=>{
   }
 }
 
+module.exports = {
+  addBugComment
+}
 
 const getBugComments = async (req,res)=>{
   try{

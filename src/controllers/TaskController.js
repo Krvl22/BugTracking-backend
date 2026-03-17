@@ -1,4 +1,5 @@
 const Task = require("../models/TaskModel")
+const uploadToCloudinary = require("../utils/CloudinaryUtil")
 const Project = require("../models/ProjectModel")
 
 /* ===============================
@@ -38,10 +39,23 @@ const createTask = async (req,res)=>{
       })
     }
 
-    const lastTask = await Task.findOne({ project }).sort({ issueNumber:-1 })
+    // const lastTask = await Task.findOne({ project }).sort({ issueNumber:-1 })
 
-    const issueNumber = lastTask ? lastTask.issueNumber + 1 : 1
+    // const issueNumber = lastTask ? lastTask.issueNumber + 1 : 1
+    
+    const lastTask = await Task.findOne({ project }).sort({ issueNumber: -1 })
+    let issueNumber = 1
+    if(lastTask && lastTask.issueNumber){
+      issueNumber = lastTask.issueNumber + 1
+    }
     const issueKey = `${projectData.projectKey}-${issueNumber}`
+
+    let attachmentUrl = null
+
+    if(req.file){
+      const cloudinaryResponse = await uploadToCloudinary(req.file.path)
+      attachmentUrl = cloudinaryResponse.secure_url
+    }
 
     const task = await Task.create({
       issueKey,
@@ -51,6 +65,7 @@ const createTask = async (req,res)=>{
       project,
       module,
       createdBy,
+      attachmentUrl,
       priority: priority || "medium",
       dueDate: dueDate || null
     })
@@ -75,6 +90,9 @@ const createTask = async (req,res)=>{
   }
 }
 
+module.exports = {
+  createTask
+}
 
 /* ===============================
    GET ALL TASKS

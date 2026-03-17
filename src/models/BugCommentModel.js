@@ -31,8 +31,17 @@ const bugCommentSchema = new Schema(
     attachmentUrl: {
       type: String,
       default: null,
-      maxlength: 500,
     },
+    // attachments: [
+    //   {
+    //     fileName: String,
+    //     filePath: String,
+    //     uploadedAt: {
+    //       type: Date,
+    //       default: Date.now
+    //     }
+    //   }
+    // ],
     resolved: {
       type: Boolean,
       default: false,
