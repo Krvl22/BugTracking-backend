@@ -4,6 +4,8 @@ const { mailSend } = require("../utils/MailUtil")
 const {welcomeEmailTemplate, resetPasswordTemplate} = require("../utils/EmailTemplates")
 const uploadToCloudinary = require("../utils/CloudinaryUtil")
 const crypto = require("crypto")
+const jwt = require("jsonwebtoken")
+const secret = "secret"
 
 /* ===============================
    REGISTER USER
@@ -59,48 +61,50 @@ const registerUser = async (req, res) => {
 /* ===============================
    LOGIN USER
 ================================ */
-
-const loginUser = async (req,res)=>{
-  try{
-
-    const user = await UserModel.findOne({ email:req.body.email })
+const loginUser = async (req, res) => {
+  try {
+    const user = await UserModel.findOne({ email: req.body.email })
       .select("+password")
-      .populate("role","name")
+      .populate("role", "name");
 
-    if(!user){
+    if (!user) {
       return res.status(404).json({
-        success:false,
-        message:"User not found"
-      })
+        success: false,
+        message: "User not found",
+      });
     }
 
-    const match = await bcrypt.compare(req.body.password,user.password)
+    const isPasswordMatched = await bcrypt.compare(
+      req.body.password,
+      user.password
+    );
 
-    if(!match){
+    if (!isPasswordMatched) {
       return res.status(401).json({
-        success:false,
-        message:"Invalid password"
-      })
+        success: false,
+        message: "Invalid password",
+      });
     }
 
-    const userObject = user.toObject()
-    delete userObject.password
+    const userObject = user.toObject();
+    delete userObject.password; 
+
+    const token = jwt.sign(userObject, "SECRET_KEY");
 
     res.status(200).json({
-      success:true,
-      message:"Login successful",
-      data:userObject
-    })
-
-  }catch(err){
+      success: true,
+      message: "Login successful",
+      token:token,
+      user: userObject,
+    });
+  } catch (err) {
     res.status(500).json({
-      success:false,
-      message:"Internal server error",
-      error:err.message
-    })
+      success: false,
+      message: "Internal server error",
+      error: err.message,
+    });
   }
-}
-
+};
 /* ===============================
    GET ALL USERS
 ================================ */

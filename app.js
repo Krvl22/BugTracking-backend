@@ -33,6 +33,19 @@
   const dashboardRoutes = require("./src/routes/DashboardRoutes")
   app.use("/dashboard", dashboardRoutes)
 
+  
+  const adimnRoutes = require("./src/routes/AdminRoutes");
+  app.use("/admin", adimnRoutes);
+
+  const developerRoutes = require("./src/routes/DeveloperRoutes");
+  app.use("/developer", developerRoutes);
+
+  const testerRoutes = require("./src/routes/TesterRoutes");
+  app.use("/tester", developerRoutes);
+
+  const managerRoutes = require("./src/routes/ManagerRoutes");
+  app.use("/api/manager", managerRoutes);
+
   const PORT = process.env.PORT || 3000
 
   app.listen(PORT, () => {

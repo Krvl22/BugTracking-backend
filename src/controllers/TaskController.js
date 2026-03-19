@@ -165,7 +165,19 @@ const getTask = async (req,res)=>{
   }
 }
 
+const getMyTasks = async (req, res) => {
+  try {
+    const userId = req.query.userId;
 
+    const tasks = await Task.find({ assignedTo: userId })
+      .populate("project")
+      .sort({ createdAt: -1 });
+
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 /* ===============================
    ASSIGN TASK
 ================================ */
@@ -247,6 +259,27 @@ const submitTask = async (req,res)=>{
 }
 
 
+const getTasksForTesting = async (req, res) => {
+  try {
+    const tasks = await Task.find({ status: "submitted" })
+      .populate("project", "name projectKey")
+      .populate("module", "name")
+      .populate("assignedTo", "firstName lastName")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: tasks
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+};
+
 /* ===============================
    UPDATE TASK
 ================================ */
@@ -319,7 +352,9 @@ module.exports = {
   createTask,
   getAllTasks,
   getTask,
+  getMyTasks,
   assignTask,
+  getTasksForTesting,
   submitTask,
   updateTask,
   deleteTask

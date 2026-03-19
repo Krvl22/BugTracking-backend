@@ -128,10 +128,49 @@ const resolveBug = async (req,res)=>{
 }
 
 
+const getAssignedBugs = async (req, res) => {
+  try {
+    const userId = req.query.userId;
+
+    const bugs = await Bug.find({ assignedTo: userId })
+      .populate("reportedBy")
+      .sort({ createdAt: -1 });
+
+    res.json(bugs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+const getMyReportedBugs = async (req, res) => {
+  try {
+    const userId = req.query.userId;
+
+    const bugs = await BugComment.find({ commentedBy: userId })
+      .populate("task", "issueKey title")
+      .populate("commentedBy", "firstName lastName")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: bugs
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+};
+
 
 module.exports = {
   addBugComment,
   getBugComments,
-  resolveBug
+  resolveBug,
+  getAssignedBugs,
+  getMyReportedBugs
 }
 
