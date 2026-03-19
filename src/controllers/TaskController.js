@@ -90,10 +90,6 @@ const createTask = async (req,res)=>{
   }
 }
 
-module.exports = {
-  createTask
-}
-
 /* ===============================
    GET ALL TASKS
 ================================ */

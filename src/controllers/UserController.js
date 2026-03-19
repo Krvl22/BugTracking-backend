@@ -89,7 +89,7 @@ const loginUser = async (req, res) => {
     const userObject = user.toObject();
     delete userObject.password; 
 
-    const token = jwt.sign(userObject, "SECRET_KEY");
+    const token = jwt.sign(userObject, process.env.JWT_SECRET)
 
     res.status(200).json({
       success: true,

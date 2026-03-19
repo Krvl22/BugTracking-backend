@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken")
-const secret = "secret"
 
 const validateToken = async(req,res,next)=>{
 
@@ -12,7 +11,7 @@ const validateToken = async(req,res,next)=>{
             if(token.startsWith("Bearer ")){
 
                 const tokenValue = token.split(" ")[1]
-                const decodedData = jwt.verify(tokenValue,secret)
+                const decodedData = jwt.verify(tokenValue, process.env.JWT_SECRET)
                 console.log(decodedData)
                 next()
 
