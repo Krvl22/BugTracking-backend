@@ -64,9 +64,6 @@ const addBugComment = async (req,res)=>{
   }
 }
 
-module.exports = {
-  addBugComment
-}
 
 const getBugComments = async (req,res)=>{
   try{
@@ -127,18 +124,19 @@ const resolveBug = async (req,res)=>{
   }
 }
 
-
+// If you want bugs reported ON a tester's tasks:
 const getAssignedBugs = async (req, res) => {
   try {
     const userId = req.query.userId;
 
-    const bugs = await Bug.find({ assignedTo: userId })
-      .populate("reportedBy")
+    const bugs = await BugComment.find({ commentedBy: userId })
+      .populate("task", "issueKey title")
+      .populate("commentedBy", "firstName lastName")
       .sort({ createdAt: -1 });
 
-    res.json(bugs);
+    res.status(200).json({ success: true, data: bugs });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -165,12 +163,29 @@ const getMyReportedBugs = async (req, res) => {
   }
 };
 
+// GET ALL BUG COMMENTS
+const getAllBugComments = async (req, res) => {
+  try {
+    const bugs = await BugComment.find()
+      .populate("task", "title issueKey")
+      .populate("commentedBy", "firstName lastName")
+      .sort({ createdAt: -1 })
+
+    res.status(200).json({
+      success: true,
+      data: bugs
+    })
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message })
+  }
+}
 
 module.exports = {
   addBugComment,
   getBugComments,
   resolveBug,
   getAssignedBugs,
-  getMyReportedBugs
+  getMyReportedBugs,
+  getAllBugComments
 }
 

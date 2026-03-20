@@ -12,6 +12,7 @@ const validateToken = async(req,res,next)=>{
 
                 const tokenValue = token.split(" ")[1]
                 const decodedData = jwt.verify(tokenValue, process.env.JWT_SECRET)
+                req.user = decodedData 
                 console.log(decodedData)
                 next()
 

@@ -15,7 +15,7 @@ const getManagerDashboard = async (req, res) => {
 
     // Projects
     const projects = await Project.find()
-      .populate("team", "firstName lastName");
+  .populate("teamMembers", "firstName lastName")
 
     // Team
     const team = await User.find({ role: { $in: ["developer", "tester"] } })

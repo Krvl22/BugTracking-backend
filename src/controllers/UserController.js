@@ -89,7 +89,7 @@ const loginUser = async (req, res) => {
     const userObject = user.toObject();
     delete userObject.password; 
 
-    const token = jwt.sign(userObject, process.env.JWT_SECRET)
+    const token = jwt.sign(userObject, process.env.JWT_SECRET, { expiresIn: '7d' })
 
     res.status(200).json({
       success: true,
@@ -111,9 +111,9 @@ const loginUser = async (req, res) => {
 const getAllUsers = async (req,res)=>{
   try{
 
-    const users = await UserModel.find({ isActive:true })
-      .populate("role","name")
-      .populate("projects","name projectKey")
+    const users = await UserModel.find({ status: { $ne: "deleted" } })
+     // .populate("role","name")
+     // .populate("projects","name projectKey")
       .select("-password")
       .sort({ createdAt:-1 })
 

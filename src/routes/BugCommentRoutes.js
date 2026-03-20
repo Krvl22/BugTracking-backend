@@ -1,9 +1,11 @@
 const router = require("express").Router()
 const BugCommentController = require("../controllers/BugCommentController")
 const upload  = require("../middleware/UploadMiddleware")
-const testMiddleware = require("../middleware/TestMiddleware")
-router.post("/",upload.single("image") ,BugCommentController.addBugComment)
-router.get("/task/:taskId",testMiddleware,BugCommentController.getBugComments)
-router.patch("/:id/resolve", BugCommentController.resolveBug)
+const validateToken = require("../middleware/AuthMiddleware")
+
+router.get("/",validateToken, BugCommentController.getAllBugComments)
+router.post("/",validateToken,upload.single("image") ,BugCommentController.addBugComment)
+router.get("/task/:taskId",validateToken,BugCommentController.getBugComments)
+router.patch("/:id/resolve",validateToken, BugCommentController.resolveBug)
 
 module.exports = router

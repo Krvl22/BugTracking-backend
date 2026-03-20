@@ -29,6 +29,10 @@ const projectSchema = new Schema(
       ref: "users",           
       required: true,
     },
+    teamMembers: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users"
+    }],
     startDate: {
       type: Date,
       default: null,
