@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const adminController = require("../controllers/AdminController");
-const validateToken = require("../middleware/AuthMiddleware"); // ✅ add this
+const validateToken = require("../middleware/AuthMiddleware"); 
 
 router.get("/stats",validateToken ,adminController.getAdminStats);
 router.get("/recent-users",validateToken ,adminController.getRecentUsers);

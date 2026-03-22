@@ -26,7 +26,7 @@ const getAdminStats = async (req, res) => {
 const getRecentUsers = async (req, res) => {
   try {
     const users = await User.find({ isActive: true })
-      .select("firstName lastName email status createdAt") // ✅ only needed fields
+      .select("firstName lastName email status createdAt") 
       .sort({ createdAt: -1 })
       .limit(5)
 
@@ -39,14 +39,16 @@ const getRecentUsers = async (req, res) => {
 const getAllProjects = async (req, res) => {
   try {
     const projects = await Project.find({ isActive: true })
-      .populate("createdBy", "firstName lastName email") // ✅ fixed: was .populate("team") which doesn't exist
-      .sort({ createdAt: -1 })
-      .limit(6)
-
+      .populate("createdBy", "firstName lastName email") 
+      
     res.status(200).json({ success: true, data: projects })
   } catch (err) {
     res.status(500).json({ success: false, message: err.message })
   }
 }
 
-module.exports = { getAdminStats, getRecentUsers, getAllProjects }
+module.exports = { 
+  getAdminStats, 
+  getRecentUsers, 
+  getAllProjects 
+}
