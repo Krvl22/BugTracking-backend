@@ -372,6 +372,44 @@ const resetPassword = async (req, res) => {
 
   }
 }
+
+const updateProfilePic = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" })
+    }
+
+    const cloudinaryResponse = await uploadToCloudinary(req.file.path)
+
+    const user = await UserModel.findByIdAndUpdate(
+      req.user._id,
+      { profilePic: cloudinaryResponse.secure_url },
+      { new: true }
+    ).select("-password")
+
+    res.status(200).json({
+      success: true,
+      message: "Profile picture updated",
+      data: user
+    })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
+
+const removeProfilePic = async (req, res) => {
+  try {
+    const user = await UserModel.findByIdAndUpdate(
+      req.user._id,
+      { profilePic: null },
+      { new: true }
+    ).select("-password")
+
+    res.status(200).json({ success: true, data: user })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
 module.exports = {
   registerUser,
   loginUser,
@@ -381,6 +419,8 @@ module.exports = {
   blockUser,
   reactivateUser,
   forgotpassword,
-  resetPassword
+  resetPassword,
+  updateProfilePic,
+  removeProfilePic
 }
 

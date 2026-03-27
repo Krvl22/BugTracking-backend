@@ -1,228 +1,431 @@
+// const Project = require("../models/ProjectModel");
+// const Task = require("../models/TaskModel");
+// const User = require("../models/UserModel");
+// const BugComment = require("../models/BugCommentModel");
+
+// // ✅ Manager Dashboard Data
+// const getManagerDashboard = async (req, res) => {
+//   try {
+
+//     // Counts
+//     const totalProjects = await Project.countDocuments();
+//     const totalTasks = await Task.countDocuments();
+//     const teamMembers = await User.countDocuments({ role: { $in: ["developer", "tester"] } });
+//     const pendingBugs = await BugComment.countDocuments({ resolved: false });
+
+//     // Projects
+//     const projects = await Project.find()
+//   .populate("teamMembers", "firstName lastName")
+
+//     // Team
+//     const team = await User.find({ role: { $in: ["developer", "tester"] } })
+//       .select("firstName lastName role");
+
+//     res.status(200).json({
+//       success: true,
+//       data: {
+//         stats: {
+//           totalProjects,
+//           totalTasks,
+//           teamMembers,
+//           pendingBugs
+//         },
+//         projects,
+//         team
+//       }
+//     });
+
+//   } catch (err) {
+//     res.status(500).json({
+//       success: false,
+//       error: err.message
+//     });
+//   }
+// };
+
+// const getManagerProjects = async (req, res) => {
+//   try {
+//     const projects = await Project.find()
+//       .populate("teamMembers", "firstName lastName email role")
+//       .populate("createdBy", "firstName lastName email")
+
+//     res.status(200).json({
+//       success: true,
+//       data: { projects }
+//     })
+//   } catch(err){
+//     res.status(500).json({ success: false, error: err.message })
+//   }
+// }
+
+// const getAllTeamMembers = async (req,res) => {
+//   try{
+//      const teamMembers = await User.find({
+//       role:{$in:["developer" , "tester"]}
+//      })
+
+//      res.status(200).json({
+//       success:true,
+//       data:teamMembers
+//      })
+//   }
+//   catch(err){
+//     res.status(500).json({
+//       success:false,
+//       err:err.message
+//     })
+//   }
+// }
+
+// const addMemberToProject = async (req,res) => {
+//   try {
+//       const { userId } = req.body
+//       const addProjectMember = await Project.findByIdAndUpdate(
+//         req.params.id,
+//         { $push: { teamMembers: userId } }, 
+//         { new: true }
+//       ).populate("teamMembers", "firstName lastName role")
+
+//       res.status(200).json({
+//         success:true,
+//         data:addProjectMember
+//       })
+//   }
+//   catch(err){
+//     res.status(500).json({
+//       success:false,
+//       err:err.message
+//     })
+//   }
+// }
+
+
+// const removeMemberToProject = async (req,res) => {
+//    try {
+//       const { userId } = req.body
+//       const addProjectMember = await Project.findByIdAndUpdate(
+//         req.params.id,
+//         { $pull: { teamMembers: userId } }, 
+//         { new: true }
+//       ).populate("teamMembers", "firstName lastName role")
+
+//       res.status(200).json({
+//         success:true,
+//         data:addProjectMember
+//       })
+//   }
+//   catch(err){
+//     res.status(500).json({
+//       success:false,
+//       err:err.message
+//     })
+//   }
+// }
+
+// const createTask = async (req, res) => {
+//   try {
+//     const { title, project, module, assignedTo, priority, dueDate, description } = req.body
+
+//     // Generate issueKey and issueNumber
+//     const proj = await Project.findById(project)
+//     const taskCount = await Task.countDocuments({ project })
+//     const issueNumber = taskCount + 1
+//     const issueKey = `${proj.projectKey}-${issueNumber}`
+
+//     const taskCreate = await Task.create({
+//       title,
+//       issueKey,
+//       issueNumber,
+//       project,
+//       module,
+//       assignedTo,
+//       createdBy: req.user._id,
+//       priority,
+//       dueDate,
+//       description,
+//       status: assignedTo ? "assigned" : "to_do"
+//     })
+
+//     res.status(201).json({
+//       success: true,
+//       data: taskCreate
+//     })
+//   } catch(err) {
+//     res.status(500).json({
+//       success: false,
+//       err: err.message
+//     })
+//   }
+// }
+
+// const getManagerTasks = async (req,res) => {
+//   try{
+//     const managerTasks = await Task.find()
+//   .populate("project", "name projectKey")
+//   .populate("assignedTo", "firstName lastName role")
+
+//     res.status(200).json({
+//       success:true,
+//       data:managerTasks
+//     })
+//   }
+//   catch(err){
+//     res.status(500).json({
+//       success:false,
+//       err:err.message
+//     })
+//   }
+// }
+
+
+// const getAllManagerBugs = async (req,res) => {
+//   try{
+//     const managerBugs = await BugComment.find()
+//       .populate("task", "title issueKey")
+//       .populate("commentedBy", "firstName lastName")
+      
+//       res.status(200).json({
+//       success:true,
+//       data:managerBugs
+//      })
+//   }
+//   catch(err){
+//     res.status(500).json({
+//       success:false,
+//       err:err.message
+//     })
+//   }
+// }
+
+// const getManagerReports = async (req, res) => {
+//   try {
+//     // Total projects
+//     const totalProjects = await Project.countDocuments()
+
+//     // Tasks grouped by status
+//     // This gives: [{_id: "to_do", count: 5}, {_id: "completed", count: 3}]
+//     const tasksByStatus = await Task.aggregate([
+//       { $group: { _id: "$status", count: { $sum: 1 } } }
+//     ])
+
+//     // Bugs grouped by severity
+//     // This gives: [{_id: "high", count: 2}, {_id: "low", count: 4}]
+//     const bugsBySeverity = await BugComment.aggregate([
+//       { $group: { _id: "$bugSeverity", count: { $sum: 1 } } }
+//     ])
+
+//     res.status(200).json({
+//       success: true,
+//       data: {
+//         totalProjects,
+//         tasksByStatus,
+//         bugsBySeverity
+//       }
+//     })
+//   } catch(err) {
+//     res.status(500).json({ success: false, error: err.message })
+//   }
+// }
+
+// module.exports = {
+//   getManagerDashboard,
+//   getManagerProjects,
+//   getAllTeamMembers,
+//   addMemberToProject,
+//   removeMemberToProject,
+//   getManagerTasks,
+//   createTask,
+//   getAllManagerBugs,
+//   getManagerReports
+// };
+
 const Project = require("../models/ProjectModel");
 const Task = require("../models/TaskModel");
 const User = require("../models/UserModel");
 const BugComment = require("../models/BugCommentModel");
 
-// ✅ Manager Dashboard Data
 const getManagerDashboard = async (req, res) => {
   try {
-
-    // Counts
     const totalProjects = await Project.countDocuments();
-    const totalTasks = await Task.countDocuments();
-    const teamMembers = await User.countDocuments({ role: { $in: ["developer", "tester"] } });
-    const pendingBugs = await BugComment.countDocuments({ resolved: false });
+    const totalTasks    = await Task.countDocuments();
+    const teamMembers   = await User.countDocuments({ role: { $in: ["developer", "tester"] } });
+    const pendingBugs   = await BugComment.countDocuments({ resolved: false });
 
-    // Projects
     const projects = await Project.find()
-  .populate("teamMembers", "firstName lastName")
+      .populate("teamMembers", "firstName lastName")
 
-    // Team
     const team = await User.find({ role: { $in: ["developer", "tester"] } })
       .select("firstName lastName role");
 
     res.status(200).json({
       success: true,
-      data: {
-        stats: {
-          totalProjects,
-          totalTasks,
-          teamMembers,
-          pendingBugs
-        },
-        projects,
-        team
-      }
+      data: { stats: { totalProjects, totalTasks, teamMembers, pendingBugs }, projects, team }
     });
-
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
+// FIX 1: was returning { data: { projects } }, frontend expects { data: [...] }
 const getManagerProjects = async (req, res) => {
   try {
     const projects = await Project.find()
       .populate("teamMembers", "firstName lastName email role")
-      .populate("createdBy", "firstName lastName email")
+      .populate("createdBy",   "firstName lastName email")
 
     res.status(200).json({
       success: true,
-      data: { projects }
+      data: projects   // ← was: { projects }
     })
-  } catch(err){
+  } catch (err) {
     res.status(500).json({ success: false, error: err.message })
   }
 }
 
-const getAllTeamMembers = async (req,res) => {
-  try{
-     const teamMembers = await User.find({
-      role:{$in:["developer" , "tester"]}
-     })
-
-     res.status(200).json({
-      success:true,
-      data:teamMembers
-     })
-  }
-  catch(err){
-    res.status(500).json({
-      success:false,
-      err:err.message
-    })
-  }
-}
-
-const addMemberToProject = async (req,res) => {
+// FIX 2: add getManagerProject (single) — used by ManagerSettings
+// returns the project where this manager is createdBy
+const getManagerProject = async (req, res) => {
   try {
-      const { userId } = req.body
-      const addProjectMember = await Project.findByIdAndUpdate(
-        req.params.id,
-        { $push: { teamMembers: userId } }, 
-        { new: true }
-      ).populate("teamMembers", "firstName lastName role")
+    const project = await Project.findOne({ createdBy: req.user._id })
+      .populate("createdBy",   "firstName lastName email")
+      .populate("teamMembers", "firstName lastName role email")
 
-      res.status(200).json({
-        success:true,
-        data:addProjectMember
-      })
-  }
-  catch(err){
-    res.status(500).json({
-      success:false,
-      err:err.message
-    })
+    if (!project) {
+      return res.status(404).json({ success: false, message: "No project assigned to you" })
+    }
+
+    res.status(200).json({ success: true, data: project })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
   }
 }
 
-
-const removeMemberToProject = async (req,res) => {
-   try {
-      const { userId } = req.body
-      const addProjectMember = await Project.findByIdAndUpdate(
-        req.params.id,
-        { $pull: { teamMembers: userId } }, 
-        { new: true }
-      ).populate("teamMembers", "firstName lastName role")
-
-      res.status(200).json({
-        success:true,
-        data:addProjectMember
-      })
-  }
-  catch(err){
-    res.status(500).json({
-      success:false,
-      err:err.message
-    })
+const getAllTeamMembers = async (req, res) => {
+  try {
+    const teamMembers = await User.find({ role: { $in: ["developer", "tester"] } })
+    res.status(200).json({ success: true, data: teamMembers })
+  } catch (err) {
+    res.status(500).json({ success: false, err: err.message })
   }
 }
 
+const addMemberToProject = async (req, res) => {
+  try {
+    const { userId } = req.body
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { $push: { teamMembers: userId } },
+      { new: true }
+    ).populate("teamMembers", "firstName lastName role")
+
+    res.status(200).json({ success: true, data: project })
+  } catch (err) {
+    res.status(500).json({ success: false, err: err.message })
+  }
+}
+
+const removeMemberToProject = async (req, res) => {
+  try {
+    const { userId } = req.body
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { $pull: { teamMembers: userId } },
+      { new: true }
+    ).populate("teamMembers", "firstName lastName role")
+
+    res.status(200).json({ success: true, data: project })
+  } catch (err) {
+    res.status(500).json({ success: false, err: err.message })
+  }
+}
+
+// FIX 3: module is now optional — was crashing when not provided
 const createTask = async (req, res) => {
   try {
     const { title, project, module, assignedTo, priority, dueDate, description } = req.body
 
-    // Generate issueKey and issueNumber
-    const proj = await Project.findById(project)
-    const taskCount = await Task.countDocuments({ project })
-    const issueNumber = taskCount + 1
-    const issueKey = `${proj.projectKey}-${issueNumber}`
+    if (!title || !project) {
+      return res.status(400).json({ success: false, message: "title and project are required" })
+    }
 
-    const taskCreate = await Task.create({
+    const proj = await Project.findById(project)
+    if (!proj) {
+      return res.status(404).json({ success: false, message: "Project not found" })
+    }
+
+    const lastTask    = await Task.findOne({ project }).sort({ issueNumber: -1 })
+    const issueNumber = lastTask?.issueNumber ? lastTask.issueNumber + 1 : 1
+    const issueKey    = `${proj.projectKey}-${issueNumber}`
+
+    const taskData = {
       title,
       issueKey,
       issueNumber,
       project,
-      module,
-      assignedTo,
-      createdBy: req.user._id,
-      priority,
-      dueDate,
-      description,
-      status: assignedTo ? "assigned" : "to_do"
-    })
+      createdBy:  req.user._id,
+      priority:   priority || "medium",
+      dueDate:    dueDate  || null,
+      description: description || "",
+      status:     assignedTo ? "assigned" : "to_do",
+      // FIX: only include module and assignedTo if they have values
+      ...(module     && { module }),
+      ...(assignedTo && { assignedTo, assignedAt: new Date() }),
+    }
 
-    res.status(201).json({
-      success: true,
-      data: taskCreate
-    })
-  } catch(err) {
-    res.status(500).json({
-      success: false,
-      err: err.message
-    })
+    const taskCreate = await Task.create(taskData)
+
+    const populated = await Task.findById(taskCreate._id)
+      .populate("project",    "name projectKey")
+      .populate("module",     "name")
+      .populate("assignedTo", "firstName lastName role")
+      .populate("createdBy",  "firstName lastName")
+
+    res.status(201).json({ success: true, data: populated })
+  } catch (err) {
+    res.status(500).json({ success: false, err: err.message })
   }
 }
 
-const getManagerTasks = async (req,res) => {
-  try{
+const getManagerTasks = async (req, res) => {
+  try {
     const managerTasks = await Task.find()
-  .populate("project", "name projectKey")
-  .populate("assignedTo", "firstName lastName role")
+      .populate("project",    "name projectKey")
+      .populate("assignedTo", "firstName lastName role")
+      .populate("module",     "name")
 
-    res.status(200).json({
-      success:true,
-      data:managerTasks
-    })
-  }
-  catch(err){
-    res.status(500).json({
-      success:false,
-      err:err.message
-    })
+    res.status(200).json({ success: true, data: managerTasks })
+  } catch (err) {
+    res.status(500).json({ success: false, err: err.message })
   }
 }
 
-
-const getAllManagerBugs = async (req,res) => {
-  try{
+const getAllManagerBugs = async (req, res) => {
+  try {
     const managerBugs = await BugComment.find()
-      .populate("task", "title issueKey")
+      .populate("task",        "title issueKey")
       .populate("commentedBy", "firstName lastName")
-      
-      res.status(200).json({
-      success:true,
-      data:managerBugs
-     })
-  }
-  catch(err){
-    res.status(500).json({
-      success:false,
-      err:err.message
-    })
+
+    res.status(200).json({ success: true, data: managerBugs })
+  } catch (err) {
+    res.status(500).json({ success: false, err: err.message })
   }
 }
 
 const getManagerReports = async (req, res) => {
   try {
-    // Total projects
-    const totalProjects = await Project.countDocuments()
-
-    // Tasks grouped by status
-    // This gives: [{_id: "to_do", count: 5}, {_id: "completed", count: 3}]
-    const tasksByStatus = await Task.aggregate([
+    const totalProjects  = await Project.countDocuments()
+    const tasksByStatus  = await Task.aggregate([
       { $group: { _id: "$status", count: { $sum: 1 } } }
     ])
-
-    // Bugs grouped by severity
-    // This gives: [{_id: "high", count: 2}, {_id: "low", count: 4}]
     const bugsBySeverity = await BugComment.aggregate([
       { $group: { _id: "$bugSeverity", count: { $sum: 1 } } }
     ])
 
     res.status(200).json({
       success: true,
-      data: {
-        totalProjects,
-        tasksByStatus,
-        bugsBySeverity
-      }
+      data: { totalProjects, tasksByStatus, bugsBySeverity }
     })
-  } catch(err) {
+  } catch (err) {
     res.status(500).json({ success: false, error: err.message })
   }
 }
@@ -230,6 +433,7 @@ const getManagerReports = async (req, res) => {
 module.exports = {
   getManagerDashboard,
   getManagerProjects,
+  getManagerProject,      // ← NEW: add to exports
   getAllTeamMembers,
   addMemberToProject,
   removeMemberToProject,

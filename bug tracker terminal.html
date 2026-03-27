@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BugTrack v3 — Terminal Dark</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0a0a0a;
+      --bg2:     #111111;
+      --bg3:     #181818;
+      --neon:    #39ff14;
+      --blue:    #41b3ff;
+      --amber:   #ffaa00;
+      --red:     #ff3b3b;
+      --purple:  #d966ff;
+      --dim:     rgba(57,255,20,0.08);
+      --dim-b:   rgba(65,179,255,0.08);
+      --border:  rgba(57,255,20,0.12);
+      --border-b:rgba(65,179,255,0.12);
+      --border-h:rgba(57,255,20,0.4);
+      --t1:      #e0ffe0;
+      --t2:      #5a7a5a;
+      --t3:      #2c402c;
+      --mono:    "JetBrains Mono", "Fira Code", "Cascadia Code", "Courier New", monospace;
+      --sans:    -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      --r:       6px;
+      --ease:    all 0.18s ease;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--t1);
+      min-height: 100vh;
+      display: flex;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(57,255,20,0.012) 0px, rgba(57,255,20,0.012) 1px, transparent 1px, transparent 40px),
+        repeating-linear-gradient(90deg, rgba(57,255,20,0.012) 0px, rgba(57,255,20,0.012) 1px, transparent 1px, transparent 40px);
+    }
+
+    /* ── Sidebar — narrow, icon+label, monospace labels ── */
+    .sidebar {
+      width: 220px;
+      min-height: 100vh;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .sidebar::after {
+      content: "";
+      position: absolute;
+      top: 0; right: -1px; bottom: 0;
+      width: 1px;
+      background: linear-gradient(180deg, transparent, var(--neon), transparent);
+      opacity: 0.3;
+      animation: scanline 4s ease-in-out infinite;
+    }
+
+    @keyframes scanline {
+      0%, 100% { opacity: 0.15; }
+      50% { opacity: 0.5; }
+    }
+
+    .sb-top {
+      padding: 20px 16px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .logo-bracket {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--neon);
+      text-shadow: 0 0 12px var(--neon);
+      letter-spacing: -2px;
+    }
+
+    .logo-text {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--t1);
+      letter-spacing: 1px;
+    }
+
+    .logo-cursor {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--neon);
+      margin-left: 2px;
+      animation: cur 1s step-end infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes cur { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .version-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--neon);
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      border-radius: var(--r);
+      background: var(--dim);
+    }
+
+    .version-tag::before { content: "$"; opacity: 0.5; }
+
+    /* Nav */
+    .sb-nav { padding: 12px 10px; flex: 1; }
+
+    .nav-group-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--t3);
+      padding: 4px 8px 8px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: var(--r);
+      color: var(--t2);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: var(--ease);
+      margin-bottom: 1px;
+      font-family: var(--mono);
+      letter-spacing: 0.2px;
+    }
+
+    .nav-link::before { content: "//"; font-size: 10px; opacity: 0.3; }
+
+    .nav-link:hover { color: var(--neon); background: var(--dim); }
+
+    .nav-link.active {
+      color: var(--neon);
+      background: var(--dim);
+      border: 1px solid var(--border);
+      box-shadow: inset 0 0 12px rgba(57,255,20,0.05);
+    }
+
+    .nav-link.active::before { content: ">"; opacity: 1; color: var(--neon); text-shadow: 0 0 8px var(--neon); }
+
+    .nav-link .badge {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: rgba(255,59,59,0.12);
+      color: var(--red);
+      border: 1px solid rgba(255,59,59,0.3);
+    }
+
+    .nav-ico { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* Mini stats in sidebar */
+    .sb-metrics {
+      padding: 12px 10px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 4px;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .metric-key { color: var(--t2); }
+    .metric-val { font-weight: 700; }
+
+    /* User */
+    .sb-foot {
+      padding: 12px 10px;
+    }
+
+    .user-block {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      background: var(--dim);
+      cursor: pointer;
+      transition: var(--ease);
+    }
+
+    .user-block:hover { border-color: var(--border-h); }
+
+    .ava {
+      width: 30px; height: 30px;
+      border-radius: var(--r);
+      background: linear-gradient(135deg, var(--neon), var(--blue));
+      display: grid; place-items: center;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 800;
+      color: #000;
+      flex-shrink: 0;
+    }
+
+    .u-name { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--t1); }
+    .u-role { font-family: var(--mono); font-size: 10px; color: var(--neon); }
+
+    /* ── Main ── */
+    .main {
+      flex: 1;
+      padding: 28px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Top bar */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .tb-title {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--t2);
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+    }
+
+    .tb-title span { color: var(--neon); }
+
+    .page-h1 {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--t1);
+    }
+
+    .page-h1 .cursor-blink {
+      display: inline-block;
+      width: 12px;
+      height: 20px;
+      background: var(--neon);
+      margin-left: 3px;
+      animation: cur 1s step-end infinite;
+      vertical-align: middle;
+      border-radius: 2px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 16px;
+      border-radius: var(--r);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--ease);
+      border: none;
+      letter-spacing: 0.3px;
+    }
+
+    .btn-ghost {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--t2);
+    }
+
+    .btn-ghost:hover { border-color: var(--border-h); color: var(--neon); }
+
+    .btn-run {
+      background: var(--dim);
+      border: 1px solid var(--border-h);
+      color: var(--neon);
+      box-shadow: 0 0 14px rgba(57,255,20,0.2);
+    }
+
+    .btn-run:hover { background: rgba(57,255,20,0.15); box-shadow: 0 0 24px rgba(57,255,20,0.4); transform: translateY(-1px); }
+
+    /* ── Stats — Terminal card style ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .scard {
+      background: var(--bg2);
+      border: 1px solid var(--accent-border, var(--border));
+      border-radius: var(--r);
+      padding: 18px 18px;
+      transition: var(--ease);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scard::before {
+      content: attr(data-label);
+      position: absolute;
+      top: 10px; right: 12px;
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent, var(--neon));
+      opacity: 0.5;
+    }
+
+    .scard:hover {
+      border-color: var(--accent, var(--neon));
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 0 24px rgba(57,255,20,0.1), inset 0 0 24px rgba(57,255,20,0.03);
+    }
+
+    .scard-u { --accent: var(--neon);   --accent-border: rgba(57,255,20,0.18); }
+    .scard-p { --accent: var(--blue);   --accent-border: rgba(65,179,255,0.18); }
+    .scard-b { --accent: var(--red);    --accent-border: rgba(255,59,59,0.18); }
+
+    .scard-pre {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent, var(--neon));
+      margin-bottom: 6px;
+      opacity: 0.7;
+    }
+
+    .scard-val {
+      font-family: var(--mono);
+      font-size: 44px;
+      font-weight: 700;
+      letter-spacing: -3px;
+      line-height: 1;
+      color: var(--accent, var(--neon));
+      text-shadow: 0 0 20px var(--accent, var(--neon));
+      margin-bottom: 10px;
+    }
+
+    .scard-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--t2);
+    }
+
+    .scard-trend {
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 700;
+    }
+
+    .t-up   { background: rgba(57,255,20,0.1); color: var(--neon); border: 1px solid rgba(57,255,20,0.2); }
+    .t-dn   { background: rgba(255,59,59,0.1); color: var(--red);  border: 1px solid rgba(255,59,59,0.2); }
+
+    /* ── Content ── */
+    .content {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 14px;
+    }
+
+    /* Panel */
+    .panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    .ph {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg3);
+    }
+
+    .ph-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--neon);
+      text-shadow: 0 0 8px rgba(57,255,20,0.4);
+    }
+
+    .ph-title::before { content: "$"; opacity: 0.5; font-size: 11px; }
+
+    .live-ind {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--neon);
+      border: 1px solid var(--border);
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: var(--dim);
+    }
+
+    .live-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--neon);
+      box-shadow: 0 0 6px var(--neon);
+      animation: blink 1.5s ease-in-out infinite;
+    }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    .ph-link {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--t2);
+      text-decoration: none;
+      transition: var(--ease);
+    }
+
+    .ph-link:hover { color: var(--neon); }
+
+    /* Activity */
+    .act-row {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      transition: var(--ease);
+    }
+
+    .act-row:last-child { border-bottom: none; }
+    .act-row:hover { background: var(--dim); }
+
+    .act-ts {
+      padding: 14px 12px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .act-ava {
+      width: 28px; height: 28px;
+      border-radius: 4px;
+      display: grid; place-items: center;
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 800;
+      color: #000;
+      flex-shrink: 0;
+    }
+
+    .act-time-txt {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--t3);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .act-body { padding: 14px 16px; }
+
+    .act-text {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--t1);
+    }
+
+    .act-text strong { font-weight: 700; }
+    .act-text .hl { color: var(--blue); font-family: var(--mono); font-size: 12px; }
+
+    .act-footer {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    .tag {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+
+    .t-bug  { background: rgba(255,59,59,0.12);   color: var(--red);    border: 1px solid rgba(255,59,59,0.3); }
+    .t-feat { background: rgba(57,255,20,0.08);   color: var(--neon);   border: 1px solid rgba(57,255,20,0.25); }
+    .t-rev  { background: rgba(255,170,0,0.08);   color: var(--amber);  border: 1px solid rgba(255,170,0,0.25); }
+    .t-dep  { background: rgba(65,179,255,0.08);  color: var(--blue);   border: 1px solid rgba(65,179,255,0.25); }
+    .t-cls  { background: rgba(90,122,90,0.12);   color: var(--t2);     border: 1px solid rgba(90,122,90,0.2); }
+
+    .prio-tag {
+      font-family: var(--mono);
+      font-size: 8px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .p-crit { background: rgba(255,59,59,0.1); color: var(--red); }
+    .p-med  { background: rgba(255,170,0,0.1); color: var(--amber); }
+    .p-low  { background: rgba(57,255,20,0.08); color: var(--neon); }
+
+    /* Status panel */
+    .st-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 11px;
+      transition: var(--ease);
+    }
+
+    .st-row:last-child { border-bottom: none; }
+    .st-row:hover { background: var(--dim); }
+
+    .st-key { color: var(--t2); width: 70px; flex-shrink: 0; }
+
+    .st-bar {
+      flex: 1;
+      height: 3px;
+      background: rgba(57,255,20,0.06);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .st-fill { height: 100%; border-radius: 2px; }
+    .st-ct { font-weight: 700; min-width: 28px; text-align: right; }
+
+    /* Projects */
+    .proj-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 16px 18px;
+    }
+
+    .proj-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px;
+      transition: var(--ease);
+      cursor: pointer;
+    }
+
+    .proj-card:hover { border-color: var(--border-h); box-shadow: 0 0 16px rgba(57,255,20,0.08); }
+
+    .proj-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+
+    .proj-icon-box {
+      width: 28px; height: 28px;
+      border-radius: 4px;
+      display: grid; place-items: center;
+      font-size: 14px;
+      background: var(--dim);
+      border: 1px solid var(--border);
+    }
+
+    .proj-name { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--t1); }
+    .proj-sub  { font-family: var(--mono); font-size: 10px; color: var(--t2); margin-bottom: 10px; }
+
+    .prog-label { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9px; color: var(--t2); margin-bottom: 5px; }
+    .prog-label span:last-child { color: var(--neon); font-weight: 700; }
+
+    .prog-bar { height: 3px; background: rgba(57,255,20,0.06); border-radius: 2px; overflow: hidden; }
+    .prog-fill { height: 100%; border-radius: 2px; background: var(--neon); box-shadow: 0 0 8px rgba(57,255,20,0.5); }
+
+    .main::-webkit-scrollbar { width: 4px; }
+    .main::-webkit-scrollbar-track { background: transparent; }
+    .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-top">
+      <div class="logo">
+        <div class="logo-bracket">[ ]</div>
+        <div class="logo-text">BUGTRACK<span class="logo-cursor"></span></div>
+      </div>
+      <div class="version-tag">v2.4.1 -- stable</div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="nav-group-label">:: main ::</div>
+      <a href="#" class="nav-link active">
+        <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        dashboard
+      </a>
+      <a href="#" class="nav-link">
+        <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        projects
+      </a>
+      <a href="#" class="nav-link">
+        <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        users
+      </a>
+      <a href="#" class="nav-link">
+        <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        tasks
+        <span class="badge">7</span>
+      </a>
+    </nav>
+
+    <div class="sb-metrics">
+      <div class="metric-row">
+        <span class="metric-key">open_bugs</span>
+        <span class="metric-val" style="color:var(--red)">189</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">resolved</span>
+        <span class="metric-val" style="color:var(--neon)">23</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">uptime</span>
+        <span class="metric-val" style="color:var(--blue)">99.9%</span>
+      </div>
+    </div>
+
+    <div class="sb-foot">
+      <div class="user-block">
+        <div class="ava">AK</div>
+        <div>
+          <div class="u-name">alex_kim</div>
+          <div class="u-role">root@admin</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <div class="topbar">
+      <div>
+        <div class="tb-title">$ bugtrack <span>--dashboard</span></div>
+        <div class="page-h1">system_overview<span class="cursor-blink"></span></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          filter
+        </button>
+        <button class="btn btn-run">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          ./new_report.sh
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="scard scard-u" data-label="users">
+        <div class="scard-pre">$ count --active</div>
+        <div class="scard-val">2,847</div>
+        <div class="scard-meta">
+          <span class="scard-trend t-up">+12.5%</span>
+          <span>month_over_month</span>
+        </div>
+      </div>
+      <div class="scard scard-p" data-label="projects">
+        <div class="scard-pre">$ ls --projects</div>
+        <div class="scard-val" style="color:var(--blue);text-shadow:0 0 20px var(--blue)">34</div>
+        <div class="scard-meta">
+          <span class="scard-trend" style="background:rgba(65,179,255,0.1);color:var(--blue);border:1px solid rgba(65,179,255,0.25)">+3 new</span>
+          <span>this_week</span>
+        </div>
+      </div>
+      <div class="scard scard-b" data-label="bugs">
+        <div class="scard-pre">$ bugs --open</div>
+        <div class="scard-val" style="color:var(--red);text-shadow:0 0 20px var(--red)">189</div>
+        <div class="scard-meta">
+          <span class="scard-trend t-dn">-23</span>
+          <span>resolved_today</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <!-- Activity log -->
+      <div class="panel">
+        <div class="ph">
+          <div class="ph-title">activity_log <span class="live-ind"><span class="live-dot"></span>LIVE</span></div>
+          <a href="#" class="ph-link">tail -f →</a>
+        </div>
+        <div class="act-row">
+          <div class="act-ts">
+            <div class="act-ava" style="background:linear-gradient(135deg,var(--red),var(--purple))">JS</div>
+            <div class="act-time-txt">2m ago</div>
+          </div>
+          <div class="act-body">
+            <div class="act-text"><strong>Jordan S.</strong> reported critical bug in <span class="hl">#auth-service</span> — SSO redirect timeout on OAuth flow</div>
+            <div class="act-footer"><span class="tag t-bug">Bug</span><span class="prio-tag p-crit">CRIT</span></div>
+          </div>
+        </div>
+        <div class="act-row">
+          <div class="act-ts">
+            <div class="act-ava" style="background:linear-gradient(135deg,var(--neon),var(--blue));color:#000">ML</div>
+            <div class="act-time-txt">14m ago</div>
+          </div>
+          <div class="act-body">
+            <div class="act-text"><strong>Maya L.</strong> merged PR <span class="hl">#482</span> — null pointer exception in payment processor</div>
+            <div class="act-footer"><span class="tag t-feat">Feat</span><span class="prio-tag p-med">MED</span></div>
+          </div>
+        </div>
+        <div class="act-row">
+          <div class="act-ts">
+            <div class="act-ava" style="background:linear-gradient(135deg,var(--amber),var(--blue));color:#000">RK</div>
+            <div class="act-time-txt">38m ago</div>
+          </div>
+          <div class="act-body">
+            <div class="act-text"><strong>Ryan K.</strong> moved <span class="hl">BUG-219</span> → In Review — dashboard chart rendering glitch</div>
+            <div class="act-footer"><span class="tag t-rev">Review</span><span class="prio-tag p-low">LOW</span></div>
+          </div>
+        </div>
+        <div class="act-row">
+          <div class="act-ts">
+            <div class="act-ava" style="background:linear-gradient(135deg,#2c402c,#1a2c1a)">SP</div>
+            <div class="act-time-txt">1h ago</div>
+          </div>
+          <div class="act-body">
+            <div class="act-text"><strong>Sarah P.</strong> closed <span class="hl">BUG-207</span> — duplicate API call on page initialization</div>
+            <div class="act-footer"><span class="tag t-cls">Closed</span></div>
+          </div>
+        </div>
+        <div class="act-row">
+          <div class="act-ts">
+            <div class="act-ava" style="background:linear-gradient(135deg,var(--blue),var(--purple))">AK</div>
+            <div class="act-time-txt">3h ago</div>
+          </div>
+          <div class="act-body">
+            <div class="act-text"><strong>Alex K.</strong> deployed <span class="hl">v2.4.1</span> → production — patch release, 6 bug fixes</div>
+            <div class="act-footer"><span class="tag t-dep">Deploy</span><span class="prio-tag p-low">OK</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="panel">
+        <div class="ph">
+          <div class="ph-title">bug_status</div>
+          <a href="#" class="ph-link">cat →</a>
+        </div>
+        <div class="st-row">
+          <span class="st-key" style="color:var(--red)">critical</span>
+          <div class="st-bar"><div class="st-fill" style="width:28%;background:var(--red);box-shadow:0 0 6px var(--red)"></div></div>
+          <span class="st-ct" style="color:var(--red)">12</span>
+        </div>
+        <div class="st-row">
+          <span class="st-key" style="color:var(--amber)">progress</span>
+          <div class="st-bar"><div class="st-fill" style="width:55%;background:var(--amber);box-shadow:0 0 6px var(--amber)"></div></div>
+          <span class="st-ct" style="color:var(--amber)">47</span>
+        </div>
+        <div class="st-row">
+          <span class="st-key" style="color:var(--blue)">review</span>
+          <div class="st-bar"><div class="st-fill" style="width:38%;background:var(--blue);box-shadow:0 0 6px var(--blue)"></div></div>
+          <span class="st-ct" style="color:var(--blue)">29</span>
+        </div>
+        <div class="st-row">
+          <span class="st-key" style="color:var(--purple)">open</span>
+          <div class="st-bar"><div class="st-fill" style="width:72%;background:var(--purple);box-shadow:0 0 6px var(--purple)"></div></div>
+          <span class="st-ct" style="color:var(--purple)">101</span>
+        </div>
+        <div class="st-row">
+          <span class="st-key" style="color:var(--neon)">resolved</span>
+          <div class="st-bar"><div class="st-fill" style="width:88%;background:var(--neon);box-shadow:0 0 6px var(--neon)"></div></div>
+          <span class="st-ct" style="color:var(--neon)">312</span>
+        </div>
+        <div class="st-row">
+          <span class="st-key">closed</span>
+          <div class="st-bar"><div class="st-fill" style="width:95%;background:var(--t2)"></div></div>
+          <span class="st-ct" style="color:var(--t2)">589</span>
+        </div>
+
+        <div style="padding:12px 16px;border-top:1px solid var(--border);">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">team_members[]</div>
+          <div style="display:flex;gap:5px;">
+            <div class="ava" style="width:26px;height:26px;font-size:9px;border-radius:4px;">AK</div>
+            <div class="ava" style="width:26px;height:26px;font-size:9px;border-radius:4px;background:linear-gradient(135deg,var(--red),var(--purple))">JS</div>
+            <div class="ava" style="width:26px;height:26px;font-size:9px;border-radius:4px;background:linear-gradient(135deg,var(--neon),var(--blue));color:#000">ML</div>
+            <div class="ava" style="width:26px;height:26px;font-size:9px;border-radius:4px;background:linear-gradient(135deg,var(--amber),var(--blue));color:#000">RK</div>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--t3);align-self:center;margin-left:2px;">+8</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projects -->
+    <div class="panel">
+      <div class="ph">
+        <div class="ph-title">active_projects</div>
+        <a href="#" class="ph-link">ls --all →</a>
+      </div>
+      <div class="proj-grid">
+        <div class="proj-card">
+          <div class="proj-hd">
+            <div class="proj-icon-box">⚡</div>
+            <div>
+              <div class="proj-name">auth-service</div>
+            </div>
+          </div>
+          <div class="proj-sub">v2.4 · bugs: 3 open</div>
+          <div class="prog-label"><span>completion</span><span>72%</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:72%"></div></div>
+        </div>
+        <div class="proj-card">
+          <div class="proj-hd">
+            <div class="proj-icon-box">💳</div>
+            <div>
+              <div class="proj-name">payment-gateway</div>
+            </div>
+          </div>
+          <div class="proj-sub">v1.8 · bugs: 7 open</div>
+          <div class="prog-label"><span>completion</span><span>48%</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:48%;background:var(--amber);box-shadow:0 0 8px rgba(255,170,0,0.5)"></div></div>
+        </div>
+        <div class="proj-card">
+          <div class="proj-hd">
+            <div class="proj-icon-box">📊</div>
+            <div>
+              <div class="proj-name">analytics-dash</div>
+            </div>
+          </div>
+          <div class="proj-sub">v3.1 · bugs: 2 open</div>
+          <div class="prog-label"><span>completion</span><span>91%</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:91%;background:var(--blue);box-shadow:0 0 8px rgba(65,179,255,0.5)"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</body>
+</html>

@@ -1,6 +1,7 @@
 const BugComment = require("../models/BugCommentModel")
 const Task = require("../models/TaskModel")
 const uploadToCloudinary = require("../utils/CloudinaryUtil")
+const { notifyBugFound } = require("../services/notificationService");
 
 // ADD BUG COMMENT
 const addBugComment = async (req,res)=>{
@@ -23,6 +24,7 @@ const addBugComment = async (req,res)=>{
     }
 
     const task = await Task.findById(taskId)
+    .populate("assignedTo createdBy", "firstName lastName email");
 
     if(!task){
       return res.status(404).json({
@@ -48,7 +50,10 @@ const addBugComment = async (req,res)=>{
 
     task.status = "bug_found"
     await task.save()
+    const developer = task.assignedTo;
+    const tester = req.user;
 
+    await notifyBugFound(task, developer, tester, comment);
     res.status(201).json({
       success:true,
       message:"Bug comment added successfully",
@@ -100,7 +105,7 @@ const resolveBug = async (req,res)=>{
         resolvedAt:new Date()
       },
       { new:true }
-    )
+    ).populate("task")
 
     if(!bug){
       return res.status(404).json({
@@ -108,6 +113,14 @@ const resolveBug = async (req,res)=>{
         message:"Bug not found"
       })
     }
+
+  const task = await Task.findById(bug.task)
+    .populate("assignedTo createdBy", "firstName lastName email");
+
+  const developer = task.assignedTo;
+  const tester = bug.commentedBy;
+
+await notifyTaskCompleted(task, [tester]);
 
     res.status(200).json({
       success:true,

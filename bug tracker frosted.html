@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BugTrack v1 — Frosted Glass</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #090e18;
+      --bg2:        #0d1520;
+      --glass:      rgba(13, 21, 32, 0.5);
+      --glass2:     rgba(255,255,255,0.04);
+      --border:     rgba(99, 179, 255, 0.1);
+      --border-h:   rgba(99, 179, 255, 0.35);
+      --neon:       #63b3ff;
+      --neon-glow:  0 0 20px rgba(99,179,255,0.3);
+      --neon-dim:   rgba(99,179,255,0.1);
+      --t1:         #dde8f5;
+      --t2:         #7a94b0;
+      --t3:         #3a4d62;
+      --green:      #4ade80;
+      --red:        #fb7185;
+      --yellow:     #fbbf24;
+      --purple:     #c084fc;
+      --r:          16px;
+      --ease:       all 0.22s ease;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      min-height: 100vh;
+      display: flex;
+      background-image:
+        radial-gradient(ellipse 70% 50% at 15% 0%, rgba(99,179,255,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 85% 100%, rgba(192,132,252,0.05) 0%, transparent 60%);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 260px;
+      min-height: 100vh;
+      background: linear-gradient(180deg, rgba(13,21,32,0.8) 0%, rgba(9,14,24,0.9) 100%);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 0;
+      flex-shrink: 0;
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 24px 28px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .logo-mark {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--neon) 0%, #a78bfa 100%);
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      box-shadow: var(--neon-glow);
+      flex-shrink: 0;
+    }
+
+    .logo-name {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+    }
+
+    .logo-name em { font-style: normal; color: var(--neon); }
+
+    .nav-section { padding: 0 14px; margin-bottom: 8px; }
+
+    .nav-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--t3);
+      padding: 0 10px 10px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      color: var(--t2);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: var(--ease);
+      margin-bottom: 2px;
+    }
+
+    .nav-link:hover { background: var(--neon-dim); color: var(--neon); }
+
+    .nav-link.active {
+      background: linear-gradient(90deg, rgba(99,179,255,0.14) 0%, rgba(99,179,255,0.04) 100%);
+      color: var(--neon);
+      box-shadow: inset 0 0 0 1px rgba(99,179,255,0.2);
+    }
+
+    .nav-link.active .ico { filter: drop-shadow(0 0 5px var(--neon)); }
+
+    .ico { width: 18px; height: 18px; opacity: 0.9; }
+
+    .badge {
+      margin-left: auto;
+      background: rgba(251,113,133,0.15);
+      color: var(--red);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .sidebar-foot {
+      margin-top: auto;
+      padding: 20px 14px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .user-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: var(--ease);
+    }
+
+    .user-row:hover { background: var(--neon-dim); }
+
+    .ava {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--neon), #a78bfa);
+      display: grid; place-items: center;
+      font-size: 12px; font-weight: 800; color: #fff;
+      flex-shrink: 0;
+    }
+
+    .u-name { font-size: 13px; font-weight: 700; color: var(--t1); }
+    .u-role { font-size: 11px; color: var(--t3); }
+
+    /* ── Main ── */
+    .main {
+      flex: 1;
+      padding: 40px 36px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .page-hd {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .page-hd h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.6px; }
+    .page-hd p { font-size: 14px; color: var(--t2); margin-top: 4px; }
+
+    .btn-new {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 20px;
+      background: var(--neon);
+      color: #06111f;
+      border: none;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--ease);
+      box-shadow: 0 0 20px rgba(99,179,255,0.4);
+    }
+
+    .btn-new:hover {
+      background: #8ecfff;
+      transform: translateY(-2px);
+      box-shadow: 0 0 32px rgba(99,179,255,0.6);
+    }
+
+    /* ── Stats ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .scard {
+      background: var(--glass);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 26px 24px;
+      transition: var(--ease);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scard::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: var(--r);
+      background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .scard:hover {
+      transform: translateY(-4px) scale(1.015);
+      border-color: var(--border-h);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.4), var(--neon-glow);
+    }
+
+    .scard-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .scard-lbl { font-size: 13px; font-weight: 600; color: var(--t2); }
+
+    .scard-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      font-size: 20px;
+    }
+
+    .ic-blue   { background: rgba(99,179,255,0.12); }
+    .ic-purple { background: rgba(192,132,252,0.12); }
+    .ic-red    { background: rgba(251,113,133,0.12); }
+
+    .scard-val {
+      font-size: 40px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1;
+      margin-bottom: 14px;
+    }
+
+    .scard-trend {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--t2);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .pill-g { background: rgba(74,222,128,0.12); color: var(--green); }
+    .pill-r { background: rgba(251,113,133,0.12); color: var(--red); }
+
+    /* ── Content Row ── */
+    .row { display: grid; grid-template-columns: 1fr 320px; gap: 22px; }
+
+    /* ── Panel ── */
+    .panel {
+      background: var(--glass);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    .ph {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ph-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--neon);
+      box-shadow: 0 0 8px var(--neon);
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .ph-link { font-size: 12px; color: var(--neon); text-decoration: none; opacity: 0.8; transition: var(--ease); }
+    .ph-link:hover { opacity: 1; }
+
+    /* Activity */
+    .act-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      transition: var(--ease);
+    }
+
+    .act-row:last-child { border-bottom: none; }
+    .act-row:hover { background: rgba(99,179,255,0.04); }
+
+    .act-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .act-ava {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 11px; font-weight: 800; color: #fff;
+      flex-shrink: 0;
+    }
+
+    .act-body { flex: 1; }
+
+    .act-text {
+      font-size: 13.5px;
+      color: var(--t1);
+      line-height: 1.55;
+    }
+
+    .act-text strong { font-weight: 700; }
+    .act-text .hl { color: var(--neon); font-weight: 600; }
+
+    .act-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 5px;
+    }
+
+    .act-time { font-size: 11px; color: var(--t3); }
+
+    .tag {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 1px 7px;
+      border-radius: 4px;
+    }
+
+    .t-bug  { background: rgba(251,113,133,0.12); color: var(--red); border: 1px solid rgba(251,113,133,0.25); }
+    .t-feat { background: rgba(74,222,128,0.1);   color: var(--green);border: 1px solid rgba(74,222,128,0.25); }
+    .t-rev  { background: rgba(251,191,36,0.1);   color: var(--yellow);border: 1px solid rgba(251,191,36,0.25); }
+    .t-dep  { background: rgba(99,179,255,0.1);   color: var(--neon); border: 1px solid rgba(99,179,255,0.25); }
+    .t-cls  { background: rgba(122,148,176,0.1);  color: var(--t2);   border: 1px solid rgba(122,148,176,0.2); }
+
+    /* Status panel */
+    .st-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 20px;
+      border-bottom: 1px solid var(--border);
+      transition: var(--ease);
+    }
+
+    .st-row:last-child { border-bottom: none; }
+    .st-row:hover { background: rgba(99,179,255,0.03); }
+
+    .st-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .st-nm  { flex: 1; font-size: 13px; color: var(--t2); }
+    .st-bar { width: 64px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+    .st-fill { height: 100%; border-radius: 2px; }
+    .st-ct  { font-size: 13px; font-weight: 700; min-width: 28px; text-align: right; }
+
+    /* Scrollbar */
+    .main::-webkit-scrollbar { width: 5px; }
+    .main::-webkit-scrollbar-track { background: transparent; }
+    .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="logo-wrap">
+      <div class="logo-mark">🐞</div>
+      <div class="logo-name">Bug<em>Track</em></div>
+    </div>
+
+    <nav class="nav-section">
+      <div class="nav-label">Navigation</div>
+      <a href="#" class="nav-link active">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="#" class="nav-link">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Projects
+      </a>
+      <a href="#" class="nav-link">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Users
+      </a>
+      <a href="#" class="nav-link">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Tasks
+        <span class="badge">7</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="user-row">
+        <div class="ava">AK</div>
+        <div>
+          <div class="u-name">Alex Kim</div>
+          <div class="u-role">Admin</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-hd">
+      <div>
+        <h1>Dashboard</h1>
+        <p>Welcome back, Alex — here's your overview.</p>
+      </div>
+      <button class="btn-new">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Bug Report
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="scard">
+        <div class="scard-top">
+          <span class="scard-lbl">Total Users</span>
+          <div class="scard-icon ic-blue">👥</div>
+        </div>
+        <div class="scard-val" style="color:var(--neon)">2,847</div>
+        <div class="scard-trend"><span class="pill pill-g">▲ 12.5%</span> vs last month</div>
+      </div>
+      <div class="scard">
+        <div class="scard-top">
+          <span class="scard-lbl">Active Projects</span>
+          <div class="scard-icon ic-purple">📁</div>
+        </div>
+        <div class="scard-val" style="color:var(--purple)">34</div>
+        <div class="scard-trend"><span class="pill pill-g">▲ 3</span> new this week</div>
+      </div>
+      <div class="scard">
+        <div class="scard-top">
+          <span class="scard-lbl">Open Bugs</span>
+          <div class="scard-icon ic-red">🐛</div>
+        </div>
+        <div class="scard-val" style="color:var(--red)">189</div>
+        <div class="scard-trend"><span class="pill pill-r">▼ 23</span> resolved today</div>
+      </div>
+    </div>
+
+    <!-- Row -->
+    <div class="row">
+      <!-- Activity -->
+      <div class="panel">
+        <div class="ph">
+          <div class="ph-title"><div class="live-dot"></div> Recent Activity</div>
+          <a href="#" class="ph-link">View all →</a>
+        </div>
+        <div class="act-row">
+          <div class="act-dot" style="background:var(--red);box-shadow:0 0 6px var(--red)"></div>
+          <div class="act-ava" style="background:linear-gradient(135deg,#fb7185,#a78bfa)">JS</div>
+          <div class="act-body">
+            <div class="act-text"><strong>Jordan S.</strong> reported critical bug in <span class="hl">#auth-service</span> — SSO redirect timeout</div>
+            <div class="act-meta"><span class="act-time">2 min ago</span><span class="tag t-bug">Bug</span></div>
+          </div>
+        </div>
+        <div class="act-row">
+          <div class="act-dot" style="background:var(--yellow);box-shadow:0 0 6px var(--yellow)"></div>
+          <div class="act-ava" style="background:linear-gradient(135deg,#4ade80,#63b3ff)">ML</div>
+          <div class="act-body">
+            <div class="act-text"><strong>Maya L.</strong> merged PR <span class="hl">#482</span> — fixed null pointer in payment processor</div>
+            <div class="act-meta"><span class="act-time">14 min ago</span><span class="tag t-feat">Feature</span></div>
+          </div>
+        </div>
+        <div class="act-row">
+          <div class="act-dot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></div>
+          <div class="act-ava" style="background:linear-gradient(135deg,#fbbf24,#63b3ff)">RK</div>
+          <div class="act-body">
+            <div class="act-text"><strong>Ryan K.</strong> moved <span class="hl">BUG-219</span> to "In Review" — chart rendering issue</div>
+            <div class="act-meta"><span class="act-time">38 min ago</span><span class="tag t-rev">Review</span></div>
+          </div>
+        </div>
+        <div class="act-row">
+          <div class="act-dot" style="background:var(--t3)"></div>
+          <div class="act-ava" style="background:linear-gradient(135deg,#3a4d62,#1e3a5f)">SP</div>
+          <div class="act-body">
+            <div class="act-text"><strong>Sarah P.</strong> closed <span class="hl">BUG-207</span> — duplicate API call on page init</div>
+            <div class="act-meta"><span class="act-time">1 hr ago</span><span class="tag t-cls">Closed</span></div>
+          </div>
+        </div>
+        <div class="act-row">
+          <div class="act-dot" style="background:var(--neon);box-shadow:0 0 6px var(--neon)"></div>
+          <div class="act-ava" style="background:linear-gradient(135deg,#63b3ff,#a78bfa)">AK</div>
+          <div class="act-body">
+            <div class="act-text"><strong>Alex K.</strong> deployed <span class="hl">v2.4.1</span> to production — 6 bug fixes</div>
+            <div class="act-meta"><span class="act-time">3 hr ago</span><span class="tag t-dep">Deploy</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="panel">
+        <div class="ph">
+          <div class="ph-title">Bug Status</div>
+          <a href="#" class="ph-link">Details →</a>
+        </div>
+        <div class="st-row">
+          <div class="st-dot" style="background:var(--red);box-shadow:0 0 5px var(--red)"></div>
+          <span class="st-nm">Critical</span>
+          <div class="st-bar"><div class="st-fill" style="width:28%;background:var(--red)"></div></div>
+          <span class="st-ct" style="color:var(--red)">12</span>
+        </div>
+        <div class="st-row">
+          <div class="st-dot" style="background:var(--yellow);box-shadow:0 0 5px var(--yellow)"></div>
+          <span class="st-nm">In Progress</span>
+          <div class="st-bar"><div class="st-fill" style="width:55%;background:var(--yellow)"></div></div>
+          <span class="st-ct" style="color:var(--yellow)">47</span>
+        </div>
+        <div class="st-row">
+          <div class="st-dot" style="background:var(--neon);box-shadow:0 0 5px var(--neon)"></div>
+          <span class="st-nm">In Review</span>
+          <div class="st-bar"><div class="st-fill" style="width:38%;background:var(--neon)"></div></div>
+          <span class="st-ct" style="color:var(--neon)">29</span>
+        </div>
+        <div class="st-row">
+          <div class="st-dot" style="background:var(--purple);box-shadow:0 0 5px var(--purple)"></div>
+          <span class="st-nm">Open</span>
+          <div class="st-bar"><div class="st-fill" style="width:72%;background:var(--purple)"></div></div>
+          <span class="st-ct" style="color:var(--purple)">101</span>
+        </div>
+        <div class="st-row">
+          <div class="st-dot" style="background:var(--green);box-shadow:0 0 5px var(--green)"></div>
+          <span class="st-nm">Resolved</span>
+          <div class="st-bar"><div class="st-fill" style="width:88%;background:var(--green)"></div></div>
+          <span class="st-ct" style="color:var(--green)">312</span>
+        </div>
+        <div class="st-row">
+          <div class="st-dot" style="background:var(--t3)"></div>
+          <span class="st-nm">Closed</span>
+          <div class="st-bar"><div class="st-fill" style="width:95%;background:var(--t3)"></div></div>
+          <span class="st-ct" style="color:var(--t2)">589</span>
+        </div>
+
+        <div style="padding:18px 20px; border-top:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px;">Team</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <div class="ava" style="width:30px;height:30px;font-size:11px;">AK</div>
+            <div class="ava" style="width:30px;height:30px;font-size:11px;background:linear-gradient(135deg,#fb7185,#a78bfa)">JS</div>
+            <div class="ava" style="width:30px;height:30px;font-size:11px;background:linear-gradient(135deg,#4ade80,#63b3ff)">ML</div>
+            <div class="ava" style="width:30px;height:30px;font-size:11px;background:linear-gradient(135deg,#fbbf24,#63b3ff)">RK</div>
+            <span style="font-size:12px;color:var(--t3);margin-left:4px;">+8</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>
