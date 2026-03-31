@@ -22,7 +22,7 @@
   app.use("/tasks", taskRoutes)
 
   const bugRoutes = require("./src/routes/BugCommentRoutes")
-  app.use("/bugs", bugRoutes)
+  app.use("/bugcomments", bugRoutes)
 
   const notificationRoutes = require("./src/routes/NotificationRoutes")
   app.use("/notifications", notificationRoutes)

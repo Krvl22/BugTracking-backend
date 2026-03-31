@@ -340,6 +340,8 @@ const removeMemberToProject = async (req, res) => {
 }
 
 // FIX 3: module is now optional — was crashing when not provided
+// REPLACE only the createTask function in ManagerController.js with this:
+
 const createTask = async (req, res) => {
   try {
     const { title, project, module, assignedTo, priority, dueDate, description } = req.body
@@ -353,21 +355,31 @@ const createTask = async (req, res) => {
       return res.status(404).json({ success: false, message: "Project not found" })
     }
 
-    const lastTask    = await Task.findOne({ project }).sort({ issueNumber: -1 })
-    const issueNumber = lastTask?.issueNumber ? lastTask.issueNumber + 1 : 1
-    const issueKey    = `${proj.projectKey}-${issueNumber}`
+    // FIX: Use total count of ALL tasks in project (including deleted attempts)
+    // Then keep incrementing until we find a unique issueKey
+    let issueNumber
+    let issueKey
+    let attempts = 0
+
+    do {
+      // Count all tasks for this project to get next number
+      const taskCount = await Task.countDocuments({ project })
+      issueNumber = taskCount + 1 + attempts
+      issueKey = `${proj.projectKey}-${issueNumber}`
+      attempts++
+      if (attempts > 100) break // safety limit
+    } while (await Task.findOne({ issueKey })) // keep trying until unique
 
     const taskData = {
       title,
       issueKey,
       issueNumber,
       project,
-      createdBy:  req.user._id,
-      priority:   priority || "medium",
-      dueDate:    dueDate  || null,
+      createdBy:   req.user._id,
+      priority:    priority || "medium",
+      dueDate:     dueDate  || null,
       description: description || "",
-      status:     assignedTo ? "assigned" : "to_do",
-      // FIX: only include module and assignedTo if they have values
+      status:      assignedTo ? "assigned" : "to_do",
       ...(module     && { module }),
       ...(assignedTo && { assignedTo, assignedAt: new Date() }),
     }
