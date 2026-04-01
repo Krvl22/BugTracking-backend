@@ -93,6 +93,7 @@ const Project = require("../models/ProjectModel");
 const Task = require("../models/TaskModel");
 const BugComment = require("../models/BugCommentModel");
 const uploadToCloudinary = require("../utils/CloudinaryUtil");
+const { notifyTaskSubmitted } = require("../services/notificationService")
 
 const getDeveloperTasks = async (req, res) => {
   try {
@@ -154,6 +155,35 @@ const getDeveloperProjects = async (req, res) => {
   }
 };
 
+// const submitTasks = async (req, res) => {
+//   try {
+//     const updateData = { status: "submitted", submittedAt: new Date() };
+
+//     // Optional file upload
+//     if (req.file) {
+//       const cloudinaryResponse = await uploadToCloudinary(req.file.path);
+//       updateData.submissionFileUrl = cloudinaryResponse.secure_url;
+//     }
+
+//     const task = await Task.findByIdAndUpdate(req.params.id, updateData, {
+//       new: true,
+//     })
+
+//     if (!task) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Task not found" });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Task submitted successfully",
+//       data: task,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
 const submitTasks = async (req, res) => {
   try {
     const updateData = { status: "submitted", submittedAt: new Date() };
@@ -161,7 +191,13 @@ const submitTasks = async (req, res) => {
     // Optional file upload
     if (req.file) {
       const cloudinaryResponse = await uploadToCloudinary(req.file.path);
-      updateData.submissionFileUrl = cloudinaryResponse.secure_url;
+      updateData.attachmentUrl = cloudinaryResponse.secure_url;
+    }
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Attachment is required"
+      });
     }
 
     const task = await Task.findByIdAndUpdate(req.params.id, updateData, {
@@ -169,10 +205,20 @@ const submitTasks = async (req, res) => {
     });
 
     if (!task) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Task not found" });
+      return res.status(404).json({ success: false, message: "Task not found" });
     }
+
+    // 🔥 IMPORTANT: populate data for notification
+    const populatedTask = await Task.findById(task._id)
+      .populate("assignedTo", "firstName lastName")
+      .populate("createdBy", "firstName lastName");
+
+    // 🔥 ADD THIS (THIS WAS MISSING)
+    await notifyTaskSubmitted(
+      populatedTask,
+      populatedTask.createdBy,  // tester / manager
+      req.user                  // developer
+    );
 
     res.status(200).json({
       success: true,
@@ -183,7 +229,6 @@ const submitTasks = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
-
 module.exports = {
   getDeveloperTasks,
   getAllDeveloperBugs,

@@ -243,6 +243,7 @@ const Project = require("../models/ProjectModel");
 const Task = require("../models/TaskModel");
 const User = require("../models/UserModel");
 const BugComment = require("../models/BugCommentModel");
+const { notifyTaskAssigned } = require("../services/notificationService")
 
 const getManagerDashboard = async (req, res) => {
   try {
@@ -391,7 +392,13 @@ const createTask = async (req, res) => {
       .populate("module",     "name")
       .populate("assignedTo", "firstName lastName role")
       .populate("createdBy",  "firstName lastName")
-
+      if (populated.assignedTo) {
+        await notifyTaskAssigned(
+          populated,
+          populated.assignedTo,
+          populated.createdBy
+        )
+      }
     res.status(201).json({ success: true, data: populated })
   } catch (err) {
     res.status(500).json({ success: false, err: err.message })
@@ -442,6 +449,212 @@ const getManagerReports = async (req, res) => {
   }
 }
 
+const assignTester = async (req, res) => {
+  try {
+    const { testerId } = req.body;
+
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ success: false, message: "Task not found" });
+    }
+
+    const tester = await User.findById(testerId);
+
+    if (!tester || tester.role !== "tester") {
+      return res.status(400).json({ success: false, message: "Invalid tester" });
+    }
+
+    // ✅ Availability check
+    if (tester.status !== "active") {
+      return res.status(400).json({
+        success: false,
+        message: "Tester is inactive",
+      });
+    }
+
+    // ✅ Load control
+    if (tester.currentTasks >= 5) {
+      return res.status(400).json({
+        success: false,
+        message: "Tester is overloaded",
+      });
+    }
+
+    // 🔁 Reduce old tester load
+    if (task.testedBy) {
+      await User.findByIdAndUpdate(task.testedBy, {
+        $inc: { currentTasks: -1 },
+      });
+    }
+
+    // ➕ Increase new tester load
+    await User.findByIdAndUpdate(testerId, {
+      $inc: { currentTasks: 1 },
+    });
+
+    task.testedBy = testerId;
+    task.status = "in_testing";
+
+    await task.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Tester assigned successfully",
+      data: task,
+    });
+
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+const resolveBugByManager = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ success: false, message: "Task not found" });
+    }
+
+    // Only allow for high/urgent priority
+    if (!["high", "urgent"].includes(task.priority)) {
+      return res.status(400).json({
+        success: false,
+        message: "Only high/urgent tasks can be resolved by manager",
+      });
+    }
+
+    task.status = "completed";
+    task.completedBy = req.user._id;
+    task.completedAt = new Date();
+
+    await task.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Task resolved by manager",
+      data: task,
+    });
+
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+const assignDeveloperSmart = async (req, res) => {
+  try {
+    const { developerId } = req.body;
+
+    const task = await Task.findById(req.params.id);
+    const dev = await User.findById(developerId);
+
+    if (!task || !dev || dev.role !== "developer") {
+      return res.status(400).json({ success: false, message: "Invalid developer" });
+    }
+
+    if (dev.status !== "active") {
+      return res.status(400).json({ success: false, message: "Developer inactive" });
+    }
+
+    if (dev.currentTasks >= 5) {
+      return res.status(400).json({ success: false, message: "Developer overloaded" });
+    }
+
+    // reduce old
+    if (task.assignedTo) {
+      await User.findByIdAndUpdate(task.assignedTo, {
+        $inc: { currentTasks: -1 },
+      });
+    }
+
+    // increase new
+    await User.findByIdAndUpdate(developerId, {
+      $inc: { currentTasks: 1 },
+    });
+
+    task.assignedTo = developerId;
+    task.status = "assigned";
+    task.assignedAt = new Date();
+
+    await task.save();
+
+    res.json({
+      success: true,
+      message: "Developer assigned successfully",
+      data: task,
+    });
+
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+const assignTaskFull = async (req, res) => {
+  try {
+    const { developerId, testerId } = req.body;
+
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ success: false, message: "Task not found" });
+    }
+
+    // 🔹 Assign Developer
+    if (developerId) {
+      const dev = await User.findById(developerId);
+
+      if (!dev || dev.role !== "developer") {
+        return res.status(400).json({ success: false, message: "Invalid developer" });
+      }
+
+      if (task.assignedTo) {
+        await User.findByIdAndUpdate(task.assignedTo, {
+          $inc: { currentTasks: -1 },
+        });
+      }
+
+      await User.findByIdAndUpdate(developerId, {
+        $inc: { currentTasks: 1 },
+      });
+
+      task.assignedTo = developerId;
+      task.status = "assigned";
+      task.assignedAt = new Date();
+    }
+
+    // 🔹 Assign Tester
+    if (testerId) {
+      const tester = await User.findById(testerId);
+
+      if (!tester || tester.role !== "tester") {
+        return res.status(400).json({ success: false, message: "Invalid tester" });
+      }
+
+      if (task.testedBy) {
+        await User.findByIdAndUpdate(task.testedBy, {
+          $inc: { currentTasks: -1 },
+        });
+      }
+
+      await User.findByIdAndUpdate(testerId, {
+        $inc: { currentTasks: 1 },
+      });
+
+      task.testedBy = testerId;
+    }
+
+    await task.save();
+
+    res.json({
+      success: true,
+      message: "Task assigned (developer + tester)",
+      data: task,
+    });
+
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 module.exports = {
   getManagerDashboard,
   getManagerProjects,
@@ -452,5 +665,9 @@ module.exports = {
   getManagerTasks,
   createTask,
   getAllManagerBugs,
-  getManagerReports
+  getManagerReports,
+  assignTester,
+  resolveBugByManager,
+  assignDeveloperSmart,
+  assignTaskFull
 };

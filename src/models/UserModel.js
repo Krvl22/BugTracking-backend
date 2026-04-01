@@ -36,6 +36,11 @@ const userSchema = new Schema(
     enum: ["admin", "project_manager", "developer", "tester"]
   },
 
+  currentTasks: {
+  type: Number,
+  default: 0
+  },
+
   profilePic: {
     type: String,
     default: null

@@ -132,6 +132,8 @@ const Project = require("../models/ProjectModel");
 const Task = require("../models/TaskModel");
 const BugComment = require("../models/BugCommentModel");
 const uploadToCloudinary = require("../utils/CloudinaryUtil");
+const { notifyBugFound } = require("../services/notificationService")
+const User = require("../models/UserModel")
 
 const getTesterDashboard = async (req, res) => {
   try {
@@ -231,7 +233,7 @@ const addBugComment = async (req, res) => {
 
     task.status = "bug_found";
     await task.save();
-
+    await notifyBugFound(task, task.assignedTo, req.user, comment)
     res.status(201).json({
       success: true,
       message: "Bug comment added successfully",
@@ -242,29 +244,75 @@ const addBugComment = async (req, res) => {
   }
 };
 
+// const approveTask = async (req, res) => {
+//   try {
+//     const task = await Task.findByIdAndUpdate(
+//       req.params.id,
+//       { status: "completed", completedAt: new Date() },
+//       { new: true }
+//     );
+//     await notifyTaskCompleted(task, [task.createdBy, task.assignedTo])
+//     if (!task)
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Task not found" });
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Task approved and completed",
+//       data: task,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
+
 const approveTask = async (req, res) => {
   try {
-    const task = await Task.findByIdAndUpdate(
-      req.params.id,
-      { status: "completed", completedAt: new Date() },
-      { new: true }
-    );
+    const task = await Task.findById(req.params.id)
 
-    if (!task)
-      return res
-        .status(404)
-        .json({ success: false, message: "Task not found" });
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: "Task not found"
+      })
+    }
 
-    res.status(200).json({
+    // ✅ Update task status
+    task.status = "completed"
+    task.completedBy = req.user._id
+    task.completedAt = new Date()
+
+    await task.save()
+
+    // ✅ FIX: assignedTo is ObjectId, NOT object
+    if (task.assignedTo) {
+      await User.findByIdAndUpdate(task.assignedTo, {
+        $inc: { currentTasks: -1 }
+      })
+
+      // prevent negative
+      await User.updateOne(
+        { _id: task.assignedTo, currentTasks: { $lt: 0 } },
+        { $set: { currentTasks: 0 } }
+      )
+    }
+
+    res.json({
       success: true,
-      message: "Task approved and completed",
-      data: task,
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
+      message: "Task approved successfully",
+      data: task
+    })
 
+  } catch (err) {
+    console.error(" Approve Error:", err)
+    res.status(500).json({
+      success: false,
+      message: "Error approving task",
+      error: err.message
+    })
+  }
+}
 module.exports = {
   getTesterDashboard,
   getTasksForTesting,

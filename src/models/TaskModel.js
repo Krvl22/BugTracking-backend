@@ -200,7 +200,19 @@ const taskSchema = new Schema({
   submittedAt:      { type: Date, default: null },
   completedAt:      { type: Date, default: null },
   submissionCount:  { type: Number, default: 0 },
-  reassignmentCount:{ type: Number, default: 0 }
+  reassignmentCount:{ type: Number, default: 0 },
+
+  assignedRole: {
+  type: String,
+  enum: ["developer", "manager", "tester"],
+  default: "developer"
+  },
+
+  sprint: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "sprints",
+  default: null
+  }
 
 }, { timestamps: true })
 

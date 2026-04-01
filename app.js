@@ -30,6 +30,9 @@
   const auditRoutes = require("./src/routes/AuditLogRoutes")
   app.use("/audit", auditRoutes)
 
+  const sprintRoutes = require("./src/routes/SprintRoutes")
+  app.use("/sprints", sprintRoutes)
+
   const adminRoutes = require("./src/routes/AdminRoutes");
   app.use("/admin", adminRoutes);
 

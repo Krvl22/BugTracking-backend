@@ -4,13 +4,13 @@ const Notification = require("../models/NotificationModel")
 const notifyUser = async ({ recipients, sender = null, type, title, message }) => {
   try {
     const recipientList = Array.isArray(recipients) ? recipients : [recipients]
-    const docs = recipientList.map(recipientId => ({
-      recipientId,          // FIX: was 'recipient', model expects 'recipientId'
-      senderId: sender,     // FIX: was 'sender', model expects 'senderId'
-      type,
-      title,
-      message,
-    }))
+    const docs = recipientList.map(recipient => ({
+        recipientId: recipient._id || recipient,   // ✅ MUST FIX
+        senderId: sender?._id || sender,
+        type,
+        title,
+        message,
+      }))
     await Notification.insertMany(docs)
   } catch (err) {
     console.error("Notification error:", err.message)
