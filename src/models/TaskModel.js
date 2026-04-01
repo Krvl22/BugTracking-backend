@@ -208,6 +208,12 @@ const taskSchema = new Schema({
   default: "developer"
   },
 
+  testerId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "users",
+  default: null
+  },
+
   sprint: {
   type: mongoose.Schema.Types.ObjectId,
   ref: "sprints",

@@ -10,5 +10,6 @@ router.patch("/:id/assign",validateToken, TaskController.assignTask)
 router.patch("/:id/submit",validateToken, TaskController.submitTask)
 router.put("/:id",validateToken, TaskController.updateTask)
 router.delete("/:id",validateToken, TaskController.deleteTask)
+router.get("/testing-queue", validateToken, TaskController.getTasksForTesting);
 
 module.exports = router

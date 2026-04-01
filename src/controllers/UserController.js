@@ -431,6 +431,7 @@ const { welcomeEmailTemplate, resetPasswordTemplate } = require("../utils/EmailT
 const uploadToCloudinary = require("../utils/CloudinaryUtil")
 const crypto = require("crypto")
 const jwt = require("jsonwebtoken")
+const { createAuditLog } = require("../utils/AuditLogHelper") 
 
 /* ===============================
    REGISTER USER
@@ -526,7 +527,14 @@ const loginUser = async (req, res) => {
     // ✅ Update last login
     user.lastLogin = new Date()
     await user.save()
-
+    await createAuditLog({
+      action: "user_login",
+      performedBy: user._id,
+      performedByRole: user.role,
+      targetEntity: "user",
+      targetId: user._id,
+      targetName: user.email
+    })
     const userObject = user.toObject()
     delete userObject.password
 

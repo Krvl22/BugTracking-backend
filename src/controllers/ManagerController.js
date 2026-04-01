@@ -244,6 +244,7 @@ const Task = require("../models/TaskModel");
 const User = require("../models/UserModel");
 const BugComment = require("../models/BugCommentModel");
 const { notifyTaskAssigned } = require("../services/notificationService")
+const { createAuditLog } = require("../utils/AuditLogHelper") 
 
 const getManagerDashboard = async (req, res) => {
   try {
@@ -386,7 +387,14 @@ const createTask = async (req, res) => {
     }
 
     const taskCreate = await Task.create(taskData)
-
+    await createAuditLog({
+      action: "task_created",
+      performedBy: req.user._id,
+      performedByRole: req.user.role,
+      targetEntity: "task",
+      targetId: taskCreate._id,
+      targetName: taskCreate.title
+    })
     const populated = await Task.findById(taskCreate._id)
       .populate("project",    "name projectKey")
       .populate("module",     "name")
@@ -494,9 +502,17 @@ const assignTester = async (req, res) => {
 
     task.testedBy = testerId;
     task.status = "in_testing";
+    task.assignedRole = "tester"; // ✅ ADD
 
     await task.save();
-
+    await createAuditLog({
+      action: "tester_assigned",
+      performedBy: req.user._id,
+      performedByRole: req.user.role,
+      targetEntity: "task",
+      targetId: task._id,
+      targetName: task.title
+    })
     res.status(200).json({
       success: true,
       message: "Tester assigned successfully",
@@ -516,14 +532,43 @@ const resolveBugByManager = async (req, res) => {
       return res.status(404).json({ success: false, message: "Task not found" });
     }
 
-    // Only allow for high/urgent priority
+    // 🔥 Only allow HIGH / URGENT
     if (!["high", "urgent"].includes(task.priority)) {
       return res.status(400).json({
         success: false,
-        message: "Only high/urgent tasks can be resolved by manager",
+        message: "Only high or urgent tasks can be resolved by manager",
       });
     }
 
+    // 🔥 CHECK AVAILABLE DEVELOPER
+    const availableDev = await User.findOne({
+      role: "developer",
+      status: "active",
+      currentTasks: { $lt: 5 }
+    });
+
+    if (availableDev) {
+      // ✅ Assign to developer instead
+      task.assignedTo = availableDev._id;
+      task.assignedRole = "developer";
+      task.status = "assigned";
+      task.assignedAt = new Date();
+
+      // increase load
+      await User.findByIdAndUpdate(availableDev._id, {
+        $inc: { currentTasks: 1 }
+      });
+
+      await task.save();
+
+      return res.json({
+        success: true,
+        message: "Developer available → assigned to developer",
+        data: task
+      });
+    }
+
+    // ❌ No dev → manager resolves
     task.status = "completed";
     task.completedBy = req.user._id;
     task.completedAt = new Date();
@@ -532,7 +577,7 @@ const resolveBugByManager = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Task resolved by manager",
+      message: "No developer available → resolved by manager",
       data: task,
     });
 
@@ -577,7 +622,15 @@ const assignDeveloperSmart = async (req, res) => {
     task.assignedAt = new Date();
 
     await task.save();
-
+    await createAuditLog({
+      action: "task_assigned",
+      performedBy: req.user._id,
+      performedByRole: req.user.role,
+      targetEntity: "task",
+      targetId: task._id,
+      targetName: task.title,
+      details: `Assigned to developer`
+    })
     res.json({
       success: true,
       message: "Developer assigned successfully",

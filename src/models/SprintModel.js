@@ -1,23 +1,48 @@
-const sprintSchema = new mongoose.Schema({
-  name: String,
-  startDate: Date,
-  endDate: Date,
+const mongoose = require("mongoose");
 
-  projectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Project"
-  },
+const sprintSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
 
-  tasks: [
-    {
+    startDate: {
+      type: Date,
+      required: true
+    },
+
+    endDate: {
+      type: Date,
+      required: true
+    },
+
+    project: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Task"
-    }
-  ],
+      ref: "Project",
+      required: true
+    },
 
-  status: {
-    type: String,
-    enum: ["active", "completed"],
-    default: "active"
-  }
-}, { timestamps: true });
+    tasks: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Task"
+      }
+    ],
+
+    status: {
+      type: String,
+      enum: ["active", "completed"],
+      default: "active"
+    },
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Sprint", sprintSchema);

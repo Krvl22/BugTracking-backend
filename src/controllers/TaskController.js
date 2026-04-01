@@ -877,6 +877,7 @@ const Project = require("../models/ProjectModel");
 const { getAvailableDeveloper } = require("../utils/AssignmentHelperUtil");
 const User = require("../models/UserModel");
 const uploadToCloudinary = require("../utils/CloudinaryUtil");
+const { createAuditLog } = require("../utils/AuditLogHelper") 
 
 const {
   notifyTaskAssigned,
@@ -970,7 +971,14 @@ const createTask = async (req, res) => {
     };
 
     const task = await Task.create(taskData);
-
+    await createAuditLog({
+      action: "task_created",
+      performedBy: req.user._id,
+      performedByRole: req.user.role,
+      targetEntity: "task",
+      targetId: task._id,
+      targetName: task.title
+    })
     const populatedTask = await Task.findById(task._id)
       .populate("project", "name projectKey")
       .populate("module", "name")
@@ -1104,7 +1112,14 @@ const assignTask = async (req, res) => {
     task.assignedAt = new Date();
 
     await task.save();
-
+    await createAuditLog({
+      action: "task_assigned",
+      performedBy: req.user._id,
+      performedByRole: req.user.role,
+      targetEntity: "task",
+      targetId: task._id,
+      targetName: task.title
+    })
     const updatedTask = await Task.findById(task._id).populate(
       "assignedTo createdBy",
       "firstName lastName email"
@@ -1127,7 +1142,11 @@ const submitTask = async (req, res) => {
   try {
     const task = await Task.findByIdAndUpdate(
       req.params.id,
-      { status: "submitted", submittedAt: new Date() },
+      {
+        status: "submitted",
+        assignedRole: "manager",   // 🔥 ADD THIS
+        submittedAt: new Date()
+      },
       { new: true }
     ).populate("assignedTo createdBy", "firstName lastName email");
 
@@ -1139,7 +1158,7 @@ const submitTask = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Task submitted successfully",
+      message: "Task sent to Manager",
       data: task,
     });
   } catch (err) {
@@ -1150,7 +1169,10 @@ const submitTask = async (req, res) => {
 // ================= TESTING QUEUE =================
 const getTasksForTesting = async (req, res) => {
   try {
-    const tasks = await Task.find({ status: "submitted" })
+    const tasks = await Task.find({
+      status: "submitted",
+      assignedRole: "manager"   // 🔥 ADD THIS
+    })
       .populate("project", "name projectKey")
       .populate("module", "name")
       .populate("assignedTo", "firstName lastName")
@@ -1198,6 +1220,14 @@ const updateTask = async (req, res) => {
     if (req.body.status === "completed") {
       const recipients = [task.createdBy._id, task.assignedTo._id].filter(Boolean);
       await notifyTaskCompleted(task, recipients);
+      await createAuditLog({
+      action: "task_completed",
+      performedBy: req.user._id,
+      performedByRole: req.user.role,
+      targetEntity: "task",
+      targetId: task._id,
+      targetName: task.title
+    })
     }
 
     res.status(200).json({

@@ -155,11 +155,41 @@ const getLogsByEntity = async (req,res)=>{
 
 }
 
+const getMostActiveUsers = async (req, res) => {
+  try {
+    const topUsers = await AuditLog.aggregate([
+      {
+        $group: {
+          _id: "$performedBy",
+          actionCount: { $sum: 1 }
+        }
+      },
+      { $sort: { actionCount: -1 } },
+      { $limit: 5 }
+    ])
 
+    const populatedUsers = await User.populate(topUsers, {
+      path: "_id",
+      select: "firstName lastName role profilePic"
+    })
+
+    res.status(200).json({
+      success: true,
+      data: populatedUsers
+    })
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message
+    })
+  }
+}
 
 module.exports = {
   createAuditLog,
   getAllLogs,
   getLogsByUser,
-  getLogsByEntity
+  getLogsByEntity,
+  getMostActiveUsers
 }

@@ -404,6 +404,7 @@ const BugComment = require("../models/BugCommentModel")
 const Task       = require("../models/TaskModel")
 const uploadToCloudinary = require("../utils/CloudinaryUtil")
 const { notifyBugFound } = require("../services/notificationService")
+const { createAuditLog } = require("../utils/AuditLogHelper") 
 
 const addBugComment = async (req, res) => {
   try {
@@ -423,6 +424,14 @@ const addBugComment = async (req, res) => {
     const bug = await BugComment.create({
       task: taskId, commentedBy: req.user._id,
       comment, bugSeverity: bugSeverity || "medium", attachmentUrl
+    })
+    await createAuditLog({
+      action: "bug_reported",
+      performedBy: req.user._id,
+      performedByRole: req.user.role,
+      targetEntity: "bug",
+      targetId: bug._id,
+      targetName: comment
     })
 
     task.status = "bug_found"
@@ -465,6 +474,14 @@ const resolveBug = async (req, res) => {
       { resolved: true, resolvedAt: new Date() },
       { new: true }
     ).populate("task commentedBy")
+    await createAuditLog({
+      action: "bug_resolved",
+      performedBy: req.user._id,
+      performedByRole: req.user.role,
+      targetEntity: "bug",
+      targetId: bug._id,
+      targetName: bug.comment
+    })
 
     if (!bug) return res.status(404).json({ success: false, message: "Bug not found" })
 

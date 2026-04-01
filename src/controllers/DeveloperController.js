@@ -94,6 +94,7 @@ const Task = require("../models/TaskModel");
 const BugComment = require("../models/BugCommentModel");
 const uploadToCloudinary = require("../utils/CloudinaryUtil");
 const { notifyTaskSubmitted } = require("../services/notificationService")
+const { createAuditLog } = require("../utils/AuditLogHelper") 
 
 const getDeveloperTasks = async (req, res) => {
   try {
@@ -219,6 +220,15 @@ const submitTasks = async (req, res) => {
       populatedTask.createdBy,  // tester / manager
       req.user                  // developer
     );
+
+    await createAuditLog({
+      action: "task_submitted",
+      performedBy: req.user._id,
+      performedByRole: req.user.role,
+      targetEntity: "task",
+      targetId: task._id,
+      targetName: task.title
+    })
 
     res.status(200).json({
       success: true,
