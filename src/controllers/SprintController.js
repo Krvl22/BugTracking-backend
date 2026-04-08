@@ -11,29 +11,26 @@ const createSprint = async (req, res) => {
       project,
       startDate,
       endDate,
-      tasks: tasks || [],
+      tasks: [],
       createdBy: req.user._id
     });
 
-    // 🔥 Assign sprintId to tasks (IMPORTANT)
     if (tasks && tasks.length > 0) {
       await Task.updateMany(
         { _id: { $in: tasks } },
-        { sprintId: sprint._id }
+        { sprint: sprint._id }
       );
+
+      sprint.tasks = tasks; // ✅ FIX
+      await sprint.save();
     }
 
-    res.status(201).json({
-      success: true,
-      data: sprint
-    });
+    res.status(201).json({ success: true, data: sprint });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
-
-
-// ✅ GET ALL SPRINTS (by project)
+// ✅ GET ALL SPRINTS
 const getSprints = async (req, res) => {
   try {
     const { projectId } = req.query;
@@ -41,55 +38,44 @@ const getSprints = async (req, res) => {
     const sprints = await Sprint.find({ project: projectId })
       .sort({ createdAt: -1 });
 
-    res.status(200).json({
-      success: true,
-      data: sprints
-    });
+    res.json({ success: true, data: sprints });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-
-// ✅ GET SINGLE SPRINT WITH PROGRESS + AUTO COMPLETE
+// ✅ GET SINGLE SPRINT (WITH TASKS)
 const getSprintById = async (req, res) => {
   try {
-    const sprint = await Sprint.findById(req.params.id).populate("tasks");
+    const sprint = await Sprint.findById(req.params.id)
+      .populate({
+        path: "tasks",
+        populate: [
+          { path: "assignedTo", select: "firstName lastName email" },
+          { path: "testedBy",   select: "firstName lastName email" },
+          { path: "module",     select: "name" },
+        ]
+      })
+      .populate("project", "name projectKey")
 
     if (!sprint) {
-      return res.status(404).json({ message: "Sprint not found" });
+      return res.status(404).json({ success: false, message: "Sprint not found" })
     }
 
-    // 🔥 AUTO COMPLETE
+    // Auto-complete if past end date
     if (new Date() > sprint.endDate && sprint.status !== "completed") {
-      sprint.status = "completed";
-      await sprint.save();
+      sprint.status = "completed"
+      await sprint.save()
     }
 
-    // 🔥 PROGRESS CALCULATION
-    const totalTasks = sprint.tasks.length;
+    const totalTasks     = sprint.tasks.length
+    const completedTasks = sprint.tasks.filter(t => t.status === "completed").length
+    const progress       = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100)
 
-    const completedTasks = sprint.tasks.filter(
-      (task) => task.status === "completed"
-    ).length;
-
-    const progress =
-      totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-
-    res.status(200).json({
-      success: true,
-      data: sprint,
-      progress,
-      totalTasks,
-      completedTasks
-    });
+    res.json({ success: true, data: sprint, progress, totalTasks, completedTasks })  
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-module.exports = {
-  createSprint,
-  getSprints,
-  getSprintById
-};
+module.exports = { createSprint, getSprints, getSprintById };

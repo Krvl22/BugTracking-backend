@@ -33,6 +33,9 @@
   const sprintRoutes = require("./src/routes/SprintRoutes")
   app.use("/sprints", sprintRoutes)
 
+  const chatRoutes = require("./src/routes/ChatRoutes")
+  app.use("/chat", chatRoutes)
+
   const adminRoutes = require("./src/routes/AdminRoutes");
   app.use("/admin", adminRoutes);
 

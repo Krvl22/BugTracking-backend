@@ -5,25 +5,33 @@ const bugCommentSchema = new Schema(
   {
     task: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "tasks",           
+      ref: "tasks",
       required: true,
     },
     commentedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "users",           
+      ref: "users",
       required: true,
     },
     comment: {
       type: String,
       required: true,
-      minlength: 10,          
-      maxlength: 2000,       
+      minlength: 10,
+      maxlength: 2000,
     },
     bugSeverity: {
       type: String,
       default: "medium",
-      enum: ["low", "medium", "high", "critical"], 
+      enum: ["low", "medium", "high", "critical"],
     },
+
+    // ✅ NEW: Bug lifecycle status (Open → In Progress → Verified → Closed)
+    bugStatus: {
+      type: String,
+      default: "open",
+      enum: ["open", "in_progress", "verified", "closed"],
+    },
+
     submissionCycle: {
       type: Number,
       default: 1,
@@ -32,16 +40,6 @@ const bugCommentSchema = new Schema(
       type: String,
       default: null,
     },
-    // attachments: [
-    //   {
-    //     fileName: String,
-    //     filePath: String,
-    //     uploadedAt: {
-    //       type: Date,
-    //       default: Date.now
-    //     }
-    //   }
-    // ],
     resolved: {
       type: Boolean,
       default: false,
@@ -53,6 +51,5 @@ const bugCommentSchema = new Schema(
   },
   { timestamps: true }
 )
-
 
 module.exports = mongoose.model("bugcomments", bugCommentSchema)

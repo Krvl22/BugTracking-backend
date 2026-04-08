@@ -874,6 +874,7 @@
 
 const Task = require("../models/TaskModel");
 const Project = require("../models/ProjectModel");
+const Sprint = require("../models/SprintModel");
 const { getAvailableDeveloper } = require("../utils/AssignmentHelperUtil");
 const User = require("../models/UserModel");
 const uploadToCloudinary = require("../utils/CloudinaryUtil");
@@ -993,6 +994,16 @@ const createTask = async (req, res) => {
         populatedTask.createdBy
       );
     }
+
+    // ✅ ADD THIS AFTER TASK CREATION
+  if (req.body.sprint) {
+    task.sprint = req.body.sprint;
+    await task.save();
+
+    await Sprint.findByIdAndUpdate(req.body.sprint, {
+      $push: { tasks: task._id }
+    });
+  }
 
     res.status(201).json({
       success: true,

@@ -20,14 +20,14 @@ const sprintSchema = new mongoose.Schema(
 
     project: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Project",
+      ref: "projects",
       required: true
     },
 
     tasks: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Task"
+        ref: "tasks"
       }
     ],
 
@@ -39,10 +39,10 @@ const sprintSchema = new mongoose.Schema(
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
+      ref: "users"
     }
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Sprint", sprintSchema);
+module.exports = mongoose.model("sprints", sprintSchema);

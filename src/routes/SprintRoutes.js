@@ -6,5 +6,5 @@ const sprintController = require("../controllers/SprintController")
 
 router.post("/", validateToken, sprintController.createSprint)
 router.get("/", validateToken, sprintController.getSprints)
-
+router.get("/:id", validateToken, sprintController.getSprintById);
 module.exports = router
