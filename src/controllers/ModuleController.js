@@ -29,7 +29,7 @@ const createModule = async (req, res) => {
 const getAllModules = async (req, res) => {
   try {
     // query param takes priority, then route param
-    const projectId = req.query.projectId || req.params.projectId
+    const projectId = req.query.projectId || req.params.projectId || req.params.id
 
     if (!projectId) {
       return res.status(400).json({

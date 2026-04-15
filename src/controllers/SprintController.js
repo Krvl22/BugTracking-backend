@@ -36,6 +36,13 @@ const getSprints = async (req, res) => {
     const { projectId } = req.query;
 
     const sprints = await Sprint.find({ project: projectId })
+      .populate({
+        path: 'tasks',
+        populate: [
+          { path: 'assignedTo', select: 'firstName lastName email' },
+          { path: 'module', select: 'name' },
+        ]
+      })
       .sort({ createdAt: -1 });
 
     res.json({ success: true, data: sprints });
